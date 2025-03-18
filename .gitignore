@@ -1,0 +1,28 @@
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+### Java ###
+*.class
+*.jar
+*.log
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### VS Code ###
+.vscode/
+
+### macOS ###
+.DS_Store
+
+### Application Specific ###
+application-local.yml
+application-dev.yml
+application-prod.yml
