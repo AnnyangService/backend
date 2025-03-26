@@ -1,0 +1,79 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]  # main 브랜치에 push될 때 실행
+  workflow_dispatch:    # 수동 실행 트리거 추가
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      id-token: write   # OIDC에 필요한 권한
+      contents: read    # 코드 체크아웃에 필요한 권한
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'corretto'
+        
+    - name: Build with Gradle
+      run: ./gradlew build  # 테스트 포함
+      
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ap-northeast-2
+        
+    - name: Get GitHub Actions IP
+      id: get-ip
+      run: |
+        echo "IP=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
+        
+    - name: Add IP to Security Group
+      run: |
+        aws ec2 authorize-security-group-ingress \
+          --group-id ${{ secrets.AWS_SECURITY_GROUP_ID }} \
+          --protocol tcp \
+          --port 22 \
+          --cidr ${{ steps.get-ip.outputs.IP }}/32
+          
+    - name: Get EC2 Instance IP
+      id: get-ec2-ip
+      run: |
+        INSTANCE_IP=$(aws ssm get-parameter \
+          --name "/myapp/prod/instance-ip" \
+          --with-decryption \
+          --query "Parameter.Value" \
+          --output text)
+        echo "SSH_HOST=$INSTANCE_IP" >> $GITHUB_OUTPUT
+          
+    - name: Deploy JAR file
+      run: |
+        scp -o StrictHostKeyChecking=no \
+            -i ${{ secrets.SSH_PRIVATE_KEY }} \
+            build/libs/*.jar \
+            ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }}:/app/
+            
+    - name: Restart Application
+      run: |
+        ssh -o StrictHostKeyChecking=no \
+            -i ${{ secrets.SSH_PRIVATE_KEY }} \
+            ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }} \
+            'sudo systemctl stop myapp && \
+             sudo systemctl start myapp'
+             
+    - name: Remove IP from Security Group
+      if: always()  # 이전 단계가 실패하더라도 실행
+      run: |
+        aws ec2 revoke-security-group-ingress \
+          --group-id ${{ secrets.AWS_SECURITY_GROUP_ID }} \
+          --protocol tcp \
+          --port 22 \
+          --cidr ${{ steps.get-ip.outputs.IP }}/32 
