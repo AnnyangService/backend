@@ -72,20 +72,22 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
           
-    - name: Deploy JAR file
+    - name: Set JAR filename
+      id: jar-filename
+      run: |
+        echo "JAR_FILE=$(ls build/libs/hi_meow-*.jar | xargs basename)" >> $GITHUB_OUTPUT
+        
+    - name: Deploy JAR and Update Symlink
       run: |
         scp -o StrictHostKeyChecking=no \
             -i ~/.ssh/deploy_key \
-            build/libs/*.jar \
+            build/libs/${{ steps.jar-filename.outputs.JAR_FILE }} \
             ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }}:/app/
-            
-    - name: Restart Application
-      run: |
+        
         ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/deploy_key \
             ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }} \
-            'sudo systemctl stop myapp && \
-             sudo systemctl start myapp'
+            'cd /app && ln -sf ${{ steps.jar-filename.outputs.JAR_FILE }} myapp.jar'
              
     - name: Remove IP from Security Group
       if: always()  # 이전 단계가 실패하더라도 실행
