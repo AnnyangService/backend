@@ -1,11 +1,13 @@
-.gradle/
-build/
-!gradle/wrapper/gradle-wrapper.jar
 
 ### Java ###
 *.class
 *.jar
 *.log
+
+### Gradle ###
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
 
 ### IntelliJ IDEA ###
 .idea/
