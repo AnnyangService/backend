@@ -73,7 +73,7 @@ jobs:
     - name: Restart Application
       run: |
         ssh -o StrictHostKeyChecking=no \
-            -i ${{ secrets.SSH_PRIVATE_KEY }} \
+            -i ~/.ssh/deploy_key \
             ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }} \
             'sudo systemctl stop myapp && \
              sudo systemctl start myapp'
