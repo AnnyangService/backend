@@ -14,7 +14,7 @@ spring:
         dialect: org.hibernate.dialect.MariaDBDialect
 
 server:
-  port: 80
+  port: 8080
 
 springdoc:
   swagger-ui:
