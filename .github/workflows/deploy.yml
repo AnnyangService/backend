@@ -56,11 +56,17 @@ jobs:
           --query "Parameter.Value" \
           --output text)
         echo "SSH_HOST=$INSTANCE_IP" >> $GITHUB_OUTPUT
+
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
           
     - name: Deploy JAR file
       run: |
         scp -o StrictHostKeyChecking=no \
-            -i ${{ secrets.SSH_PRIVATE_KEY }} \
+            -i ~/.ssh/deploy_key \
             build/libs/*.jar \
             ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }}:/app/
             
