@@ -13,7 +13,7 @@ public class OpenAPIConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Annyang API")
-                        .description("Annyang 프로젝트 API 문서")
+                        .description("Annyang 프로젝트 API 문서입니다")
                         .version("1.0.0"));
     }
 } 
