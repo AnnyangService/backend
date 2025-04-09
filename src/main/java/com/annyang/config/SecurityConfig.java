@@ -2,7 +2,6 @@ package com.annyang.config;
 
 import com.annyang.auth.jwt.JwtAuthenticationFilter;
 import com.annyang.auth.jwt.JwtTokenProvider;
-import com.annyang.auth.service.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +31,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .formLogin(formLogin -> formLogin.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
