@@ -60,7 +60,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("회원가입을 할 수 있다")
     void signup_Success() throws Exception {
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
             .andExpect(status().isOk())
@@ -74,7 +74,7 @@ class AuthControllerTest {
         memberRepository.save(member);
 
         // when & then
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
             .andExpect(status().isBadRequest())
@@ -92,7 +92,7 @@ class AuthControllerTest {
         loginRequest.setPassword(signUpRequest.getPassword());
 
         // when & then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isOk())
@@ -110,7 +110,7 @@ class AuthControllerTest {
         loginRequest.setPassword("wrongpassword");
 
         // when & then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isBadRequest())
@@ -125,7 +125,7 @@ class AuthControllerTest {
         invalidRequest.setPassword("password123");
         invalidRequest.setName("Test User");
 
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
             .andExpect(status().isBadRequest());
@@ -139,7 +139,7 @@ class AuthControllerTest {
         invalidRequest.setPassword("123");
         invalidRequest.setName("Test User");
 
-        mockMvc.perform(post("/api/auth/signup")
+        mockMvc.perform(post("/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
             .andExpect(status().isBadRequest());

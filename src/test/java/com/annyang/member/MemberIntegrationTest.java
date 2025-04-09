@@ -54,7 +54,7 @@ class MemberIntegrationTest {
     @Test
     @DisplayName("회원을 생성할 수 있다")
     void createMember() throws Exception {
-        mockMvc.perform(post("/api/members")
+        mockMvc.perform(post("/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(memberRequest)))
                 .andExpect(status().isCreated())
@@ -72,7 +72,7 @@ class MemberIntegrationTest {
     void createMemberWithDuplicateEmail() throws Exception {
         memberRepository.save(member); // 이미 존재하는 회원 저장
 
-        mockMvc.perform(post("/api/members")
+        mockMvc.perform(post("/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(memberRequest)))
                 .andExpect(status().isBadRequest())
@@ -84,7 +84,7 @@ class MemberIntegrationTest {
     void getMember() throws Exception {
         memberRepository.save(member);
 
-        mockMvc.perform(get("/api/members/{id}", member.getId()))
+        mockMvc.perform(get("/members/{id}", member.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value(member.getEmail()))
                 .andExpect(jsonPath("$.name").value(member.getName()));
@@ -93,7 +93,7 @@ class MemberIntegrationTest {
     @Test
     @DisplayName("존재하지 않는 회원을 조회하면 예외가 발생한다")
     void getMemberNotFound() throws Exception {
-        mockMvc.perform(get("/api/members/{id}", 999L)) // 존재하지 않는 ID
+        mockMvc.perform(get("/members/{id}", 999L)) // 존재하지 않는 ID
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("존재하지 않는 회원입니다."));
     }
@@ -109,7 +109,7 @@ class MemberIntegrationTest {
                 "김철수"
         );
 
-        mockMvc.perform(put("/api/members/{id}", member.getId())
+        mockMvc.perform(put("/members/{id}", member.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
@@ -122,7 +122,7 @@ class MemberIntegrationTest {
     void updateMemberNotFound() throws Exception {
         MemberRequest updateRequest = new MemberRequest("test@example.com", "newpassword123", "김철수");
 
-        mockMvc.perform(put("/api/members/{id}", 999L) // 존재하지 않는 ID
+        mockMvc.perform(put("/members/{id}", 999L) // 존재하지 않는 ID
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isBadRequest())
@@ -134,7 +134,7 @@ class MemberIntegrationTest {
     void deleteMember() throws Exception {
         memberRepository.save(member);
 
-        mockMvc.perform(delete("/api/members/{id}", member.getId()))
+        mockMvc.perform(delete("/members/{id}", member.getId()))
                 .andExpect(status().isNoContent());
 
         assertThat(memberRepository.findById(member.getId())).isEmpty();
@@ -143,7 +143,7 @@ class MemberIntegrationTest {
     @Test
     @DisplayName("존재하지 않는 회원을 삭제하면 예외가 발생한다")
     void deleteMemberNotFound() throws Exception {
-        mockMvc.perform(delete("/api/members/{id}", 999L)) // 존재하지 않는 ID
+        mockMvc.perform(delete("/members/{id}", 999L)) // 존재하지 않는 ID
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("존재하지 않는 회원입니다."));
     }
@@ -153,7 +153,7 @@ class MemberIntegrationTest {
     void createMemberWithEmptyEmail() throws Exception {
         MemberRequest invalidRequest = new MemberRequest("", "password123", "홍길동");
 
-        mockMvc.perform(post("/api/members")
+        mockMvc.perform(post("/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
@@ -164,7 +164,7 @@ class MemberIntegrationTest {
     void createMemberWithShortPassword() throws Exception {
         MemberRequest invalidRequest = new MemberRequest("test@example.com", "123", "홍길동");
 
-        mockMvc.perform(post("/api/members")
+        mockMvc.perform(post("/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
