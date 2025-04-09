@@ -89,7 +89,7 @@ jobs:
         ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/deploy_key \
             ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }} \
-            'cd /app && ln -sf ${{ steps.jar-filename.outputs.JAR_FILE }} myapp.jar'
+            'cd /app && sudo systemctl stop myapp && ln -sfn ${{ steps.jar-filename.outputs.JAR_FILE }} myapp.jar && sudo systemctl start myapp'
              
     - name: Remove IP from Security Group
       if: always()  # 이전 단계가 실패하더라도 실행
