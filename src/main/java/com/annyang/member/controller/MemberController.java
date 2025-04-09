@@ -12,7 +12,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/members")
+@RequestMapping("/members")
 @RequiredArgsConstructor
 public class MemberController {
 
@@ -21,7 +21,7 @@ public class MemberController {
     @PostMapping
     public ResponseEntity<MemberResponse> createMember(@RequestBody @Valid MemberRequest request) {
         MemberResponse response = memberService.createMember(request);
-        return ResponseEntity.created(URI.create("/api/members/" + response.id())).body(response);
+        return ResponseEntity.created(URI.create("/members/" + response.id())).body(response);
     }
 
     @GetMapping("/{id}")
