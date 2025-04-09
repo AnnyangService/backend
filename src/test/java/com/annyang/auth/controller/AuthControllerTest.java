@@ -4,6 +4,7 @@ import com.annyang.Main;
 import com.annyang.config.TestSecurityConfig;
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
+import com.annyang.auth.jwt.JwtTokenProvider;
 import com.annyang.member.domain.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -14,12 +15,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = {Main.class, TestSecurityConfig.class})
@@ -38,6 +44,9 @@ class AuthControllerTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtTokenProvider tokenProvider;
 
     private SignUpRequest signUpRequest;
     private Member member;
@@ -64,7 +73,7 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
             .andExpect(status().isOk())
-            .andExpect(content().string("회원가입이 완료되었습니다."));
+            .andExpect(jsonPath("$").value("회원가입이 완료되었습니다."));
     }
 
     @Test
@@ -78,11 +87,11 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
             .andExpect(status().isBadRequest())
-            .andExpect(content().string("이미 존재하는 이메일입니다."));
+            .andExpect(jsonPath("$").value("이미 존재하는 이메일입니다."));
     }
 
     @Test
-    @DisplayName("로그인에 성공한다")
+    @DisplayName("로그인에 성공하고 JWT 토큰을 발급받는다")
     void login_Success() throws Exception {
         // given
         memberRepository.save(member);
@@ -92,11 +101,25 @@ class AuthControllerTest {
         loginRequest.setPassword(signUpRequest.getPassword());
 
         // when & then
-        mockMvc.perform(post("/auth/login")
+        MvcResult result = mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isOk())
-            .andExpect(content().string("로그인 성공"));
+            .andExpect(jsonPath("$.token").exists())
+            .andExpect(jsonPath("$.message").value("로그인 성공"))
+            .andReturn();
+
+        String responseBody = result.getResponse().getContentAsString();
+        @SuppressWarnings("unchecked")
+        Map<String, String> response = objectMapper.readValue(responseBody, Map.class);
+        String token = response.get("token");
+
+        // JWT 토큰 검증
+        assertThat(token).isNotNull();
+        assertThat(tokenProvider.validateToken(token)).isTrue();
+        Authentication authentication = tokenProvider.getAuthentication(token);
+        assertThat(authentication.getName()).isEqualTo(loginRequest.getEmail());
+        
     }
 
     @Test
@@ -114,7 +137,7 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isBadRequest())
-            .andExpect(content().string("이메일 또는 비밀번호가 일치하지 않습니다."));
+            .andExpect(jsonPath("$").value("이메일 또는 비밀번호가 일치하지 않습니다."));
     }
 
     @Test

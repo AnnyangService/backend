@@ -24,3 +24,8 @@ springdoc:
   show-actuator: false
   packages-to-scan: com.annyang
   paths-to-exclude: /health
+
+
+jwt:
+  secret: {JWT_SECRET}
+  expiration: {JWT_EXPIRATION}
