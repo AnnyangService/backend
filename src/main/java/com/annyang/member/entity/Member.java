@@ -1,4 +1,4 @@
-package com.annyang.member.domain;
+package com.annyang.member.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;

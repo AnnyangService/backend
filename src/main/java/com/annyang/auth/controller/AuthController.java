@@ -3,7 +3,7 @@ package com.annyang.auth.controller;
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
 import com.annyang.auth.jwt.JwtTokenProvider;
-import com.annyang.member.domain.Member;
+import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -1,8 +1,8 @@
 package com.annyang.member.service;
 
-import com.annyang.member.domain.Member;
 import com.annyang.member.dto.MemberRequest;
 import com.annyang.member.dto.MemberResponse;
+import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;

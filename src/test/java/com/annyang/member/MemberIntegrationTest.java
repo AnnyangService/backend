@@ -2,8 +2,8 @@ package com.annyang.member;
 
 import com.annyang.Main;
 import com.annyang.config.TestSecurityConfig;
-import com.annyang.member.domain.Member;
 import com.annyang.member.dto.MemberRequest;
+import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
