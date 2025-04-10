@@ -3,6 +3,8 @@ package com.annyang.member.service;
 import com.annyang.member.dto.MemberRequest;
 import com.annyang.member.dto.MemberResponse;
 import com.annyang.member.entity.Member;
+import com.annyang.member.exception.EmailDuplicateException;
+import com.annyang.member.exception.MemberNotFoundException;
 import com.annyang.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,7 +23,7 @@ public class MemberService {
 
     public MemberResponse createMember(MemberRequest request) {
         if (memberRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+            throw new EmailDuplicateException();
         }
 
         Member member = new Member(
@@ -37,7 +39,7 @@ public class MemberService {
     public MemberResponse getMember(Long id) {
         return memberRepository.findById(id)
                 .map(MemberResponse::from)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(MemberNotFoundException::new);
     }
 
     @Transactional(readOnly = true)
@@ -49,11 +51,11 @@ public class MemberService {
 
     public MemberResponse updateMember(Long id, MemberRequest request) {
         Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(MemberNotFoundException::new);
 
         if (!member.getEmail().equals(request.email()) &&
                 memberRepository.findByEmail(request.email()).isPresent()) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+            throw new EmailDuplicateException();
         }
 
         Member updatedMember = new Member(
@@ -68,7 +70,7 @@ public class MemberService {
 
     public void deleteMember(Long id) {
         if (!memberRepository.existsById(id)) {
-            throw new IllegalArgumentException("존재하지 않는 회원입니다.");
+            throw new MemberNotFoundException();
         }
         memberRepository.deleteById(id);
     }

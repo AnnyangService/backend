@@ -2,8 +2,11 @@ package com.annyang.auth.controller;
 
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
+import com.annyang.auth.exception.UnauthorizedException;
 import com.annyang.auth.token.JwtTokenProvider;
+import com.annyang.global.response.ApiResponse;
 import com.annyang.member.entity.Member;
+import com.annyang.member.exception.EmailDuplicateException;
 import com.annyang.member.repository.MemberRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +33,9 @@ public class AuthController {
     private final JwtTokenProvider tokenProvider;
 
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@Valid @RequestBody SignUpRequest request) {
+    public ResponseEntity<ApiResponse<String>> signup(@Valid @RequestBody SignUpRequest request) {
         if (memberRepository.findByEmail(request.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("이미 존재하는 이메일입니다.");
+            throw new EmailDuplicateException();
         }
 
         Member member = new Member(
@@ -42,11 +45,11 @@ public class AuthController {
         );
 
         memberRepository.save(member);
-        return ResponseEntity.ok("회원가입이 완료되었습니다.");
+        return ResponseEntity.ok(ApiResponse.success("회원가입이 완료되었습니다."));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> login(@Valid @RequestBody LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -58,9 +61,9 @@ public class AuthController {
             response.put("token", token);
             response.put("message", "로그인 성공");
             
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success(response));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("이메일 또는 비밀번호가 일치하지 않습니다.");
+            throw new UnauthorizedException();
         }
     }
 } 
