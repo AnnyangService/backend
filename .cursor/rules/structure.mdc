@@ -1,0 +1,156 @@
+---
+description: Use this structure guide every time you add new files or directories
+globs: 
+alwaysApply: false
+---
+# 프로젝트 폴더 구조 가이드 (도메인 기반 + 전역/공통 모듈 분리)
+> 📌 Cursor에서 파일 생성 시 이 구조를 참고하세요.
+
+---
+
+## 1. 전체 구조 요약
+```
+src/main/java/com/annyang
+├── global/        # 전역 설정, 공통 예외/응답 등
+├── auth/          # 인증/인가 (JWT, OAuth2 등)
+├── member/        # 회원 도메인
+├── health/        # 헬스체크 API
+├── [도메인]/      # 새로운 도메인 추가 시 여기에 구성
+└── Main.java
+```
+
+---
+
+## 2. global/ - 전역 설정 및 공통 유틸
+```
+global/
+├── config/        # Spring Security, Swagger 등 전역 설정
+├── exception/     # 공통 예외 처리 및 예외 상위 클래스
+│   ├── BusinessException.java
+│   └── GlobalExceptionHandler.java
+├── response/      # 공통 응답 포맷 및 에러 코드
+│   ├── ApiResponse.java
+│   ├── ErrorResponse.java
+│   └── ErrorCode.java
+└── util/          # 공통 유틸 클래스
+```
+
+---
+
+## 3. auth/ - 인증/인가 (다중 인증 전략 지원)
+```
+auth/
+├── controller/
+├── dto/
+├── exception/                    # 인증 관련 예외
+│   └── InvalidTokenException.java
+├── service/
+│   ├── AuthService.java
+│   ├── JwtAuthService.java
+│   └── OAuth2AuthService.java
+├── security/
+│   ├── JwtAuthenticationFilter.java
+│   ├── JwtTokenProvider.java
+│   ├── OAuth2UserServiceImpl.java
+│   └── OAuth2SuccessHandler.java
+└── model/
+    └── AuthUserPrincipal.java
+```
+
+---
+
+## 4. member/ - 회원 도메인
+```
+member/
+├── controller/
+├── dto/
+├── entity/
+├── exception/                    # 회원 도메인 관련 비즈니스 예외
+│   ├── DuplicatedEmailException.java
+│   └── MemberNotFoundException.java
+├── repository/
+└── service/
+```
+
+---
+
+## 5. 도메인 추가 시 확장 규칙
+
+### ✅ 새 도메인 디렉토리 생성
+도메인 이름은 소문자 단수형 (예: `post`, `order`, `payment` 등)
+
+#### 예: `post` 도메인
+```
+post/
+├── controller/
+├── dto/
+├── entity/
+├── exception/
+├── repository/
+└── service/
+```
+
+> **원칙**
+> - controller, service, entity, repository, dto, exception 계층 구조 유지
+> - controller는 RESTful API 설계 원칙 준수
+> - service는 비즈니스 로직만 담당
+> - repository는 JPA 또는 MyBatis 명확히 구분
+> - exception은 `BusinessException`을 상속하고 도메인별로 정의
+> - dto는 `Request`, `Response`, 필요 시 `Command`, `Query` 등 CQRS 스타일 확장 가능
+
+---
+
+## 6. 파일 네이밍 규칙
+
+| 계층         | 접미사 예시           |
+|--------------|------------------------|
+| Controller   | `~Controller.java`     |
+| Service      | `~Service.java`        |
+| DTO          | `Request`, `Response`  |
+| Entity       | 실제 도메인명          |
+| Repository   | `~Repository.java`     |
+| Exception    | `~Exception.java`      |
+| Security     | `~Filter`, `~Provider`, `~Handler` 등 |
+
+---
+
+## 7. 공통 파일 규칙
+
+- 모든 공통 예외는 `global/exception`에 위치하고 `BusinessException`을 상속
+- 도메인별 비즈니스 예외는 각 도메인의 `exception/` 폴더에 위치
+- `ErrorCode`는 `HttpStatus`, 코드 문자열, 메시지를 포함함
+- 응답은 `ApiResponse<T>` 형식으로 통일 (`global/response`)
+- 인증 사용자 정보는 `AuthUserPrincipal`로 통합
+- 설정은 모두 `global/config` 내부에 두고, `application.yml`과 연계
+
+---
+
+## 8. 테스트 디렉토리 구조 (선택)
+`src/test/java/com/annyang` 기준
+
+- 도메인 기준으로 테스트 디렉토리 구성
+```
+member/
+├── controller/
+│   └── MemberControllerTest.java
+├── service/
+│   └── MemberServiceTest.java
+├── exception/
+│   └── DuplicatedEmailExceptionTest.java
+```
+
+> `@SpringBootTest`, `@WebMvcTest`, `@ServiceTest` 등을 상황에 따라 사용
+
+---
+
+## 9. 기타 확장 가이드
+
+- 관리자 전용 API는 `admin/` 도메인으로 분리
+- 배치/스케줄링은 `batch/` 또는 `job/` 디렉토리로 구성
+- 외부 연동 API는 `external/` 또는 `integration/` 디렉토리 사용
+```
+external/
+├── kakao/
+├── toss/
+└── s3/
+```

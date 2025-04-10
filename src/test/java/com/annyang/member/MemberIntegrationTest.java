@@ -2,8 +2,8 @@ package com.annyang.member;
 
 import com.annyang.Main;
 import com.annyang.config.TestSecurityConfig;
-import com.annyang.member.domain.Member;
 import com.annyang.member.dto.MemberRequest;
+import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,8 +58,9 @@ class MemberIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(memberRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value(memberRequest.email()))
-                .andExpect(jsonPath("$.name").value(memberRequest.name()));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value(memberRequest.email()))
+                .andExpect(jsonPath("$.data.name").value(memberRequest.name()));
 
         Member savedMember = memberRepository.findByEmail(memberRequest.email()).orElseThrow();
         assertThat(savedMember.getEmail()).isEqualTo(memberRequest.email());
@@ -76,7 +77,9 @@ class MemberIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(memberRequest)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string("이미 존재하는 이메일입니다."));
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("M002"))
+                .andExpect(jsonPath("$.error.message").value("Email already exists"));
     }
 
     @Test
@@ -86,16 +89,19 @@ class MemberIntegrationTest {
 
         mockMvc.perform(get("/members/{id}", member.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value(member.getEmail()))
-                .andExpect(jsonPath("$.name").value(member.getName()));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value(member.getEmail()))
+                .andExpect(jsonPath("$.data.name").value(member.getName()));
     }
 
     @Test
     @DisplayName("존재하지 않는 회원을 조회하면 예외가 발생한다")
     void getMemberNotFound() throws Exception {
         mockMvc.perform(get("/members/{id}", 999L)) // 존재하지 않는 ID
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("존재하지 않는 회원입니다."));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("M001"))
+                .andExpect(jsonPath("$.error.message").value("Member not found"));
     }
 
     @Test
@@ -113,8 +119,9 @@ class MemberIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value(updateRequest.email()))
-                .andExpect(jsonPath("$.name").value(updateRequest.name()));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value(updateRequest.email()))
+                .andExpect(jsonPath("$.data.name").value(updateRequest.name()));
     }
 
     @Test
@@ -125,8 +132,10 @@ class MemberIntegrationTest {
         mockMvc.perform(put("/members/{id}", 999L) // 존재하지 않는 ID
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("존재하지 않는 회원입니다."));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("M001"))
+                .andExpect(jsonPath("$.error.message").value("Member not found"));
     }
 
     @Test
@@ -135,7 +144,8 @@ class MemberIntegrationTest {
         memberRepository.save(member);
 
         mockMvc.perform(delete("/members/{id}", member.getId()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
 
         assertThat(memberRepository.findById(member.getId())).isEmpty();
     }
@@ -144,8 +154,10 @@ class MemberIntegrationTest {
     @DisplayName("존재하지 않는 회원을 삭제하면 예외가 발생한다")
     void deleteMemberNotFound() throws Exception {
         mockMvc.perform(delete("/members/{id}", 999L)) // 존재하지 않는 ID
-                .andExpect(status().isBadRequest())
-                .andExpect(content().string("존재하지 않는 회원입니다."));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("M001"))
+                .andExpect(jsonPath("$.error.message").value("Member not found"));
     }
 
     @Test
@@ -156,7 +168,9 @@ class MemberIntegrationTest {
         mockMvc.perform(post("/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("G002"));
     }
 
     @Test
@@ -167,6 +181,8 @@ class MemberIntegrationTest {
         mockMvc.perform(post("/members")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.error.code").value("G002"));
     }
 } 

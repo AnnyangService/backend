@@ -1,4 +1,4 @@
-package com.annyang.config;
+package com.annyang.global.exception;
 
 import java.io.IOException;
 

@@ -1,7 +1,9 @@
-package com.annyang.config;
+package com.annyang.global.config;
 
-import com.annyang.auth.jwt.JwtAuthenticationFilter;
-import com.annyang.auth.jwt.JwtTokenProvider;
+import com.annyang.auth.token.JwtAuthenticationFilter;
+import com.annyang.auth.token.JwtTokenProvider;
+import com.annyang.global.exception.CustomAuthenticationEntryPoint;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

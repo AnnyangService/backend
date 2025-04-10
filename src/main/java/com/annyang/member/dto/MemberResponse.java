@@ -1,6 +1,6 @@
 package com.annyang.member.dto;
 
-import com.annyang.member.domain.Member;
+import com.annyang.member.entity.Member;
 
 public record MemberResponse(
         Long id,

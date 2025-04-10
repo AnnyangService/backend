@@ -1,4 +1,4 @@
-package com.annyang.auth.jwt;
+package com.annyang.auth.token;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

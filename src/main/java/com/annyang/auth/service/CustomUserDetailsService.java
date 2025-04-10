@@ -1,6 +1,6 @@
 package com.annyang.auth.service;
 
-import com.annyang.member.domain.Member;
+import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 

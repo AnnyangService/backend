@@ -4,8 +4,8 @@ import com.annyang.Main;
 import com.annyang.config.TestSecurityConfig;
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
-import com.annyang.auth.jwt.JwtTokenProvider;
-import com.annyang.member.domain.Member;
+import com.annyang.auth.token.JwtTokenProvider;
+import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +73,9 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$").value("회원가입이 완료되었습니다."));
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data").value("회원가입이 완료되었습니다."))
+            .andExpect(jsonPath("$.error").doesNotExist());
     }
 
     @Test
@@ -87,7 +89,10 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$").value("이미 존재하는 이메일입니다."));
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.data").doesNotExist())
+            .andExpect(jsonPath("$.error.code").value("M002"))
+            .andExpect(jsonPath("$.error.message").value("Email already exists"));
     }
 
     @Test
@@ -105,14 +110,18 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.token").exists())
-            .andExpect(jsonPath("$.message").value("로그인 성공"))
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.token").exists())
+            .andExpect(jsonPath("$.data.message").value("로그인 성공"))
+            .andExpect(jsonPath("$.error").doesNotExist())
             .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
         @SuppressWarnings("unchecked")
-        Map<String, String> response = objectMapper.readValue(responseBody, Map.class);
-        String token = response.get("token");
+        Map<String, Object> response = objectMapper.readValue(responseBody, Map.class);
+        @SuppressWarnings("unchecked")
+        Map<String, String> data = (Map<String, String>) response.get("data");
+        String token = data.get("token");
 
         // JWT 토큰 검증
         assertThat(token).isNotNull();
@@ -136,8 +145,11 @@ class AuthControllerTest {
         mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$").value("이메일 또는 비밀번호가 일치하지 않습니다."));
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.data").doesNotExist())
+            .andExpect(jsonPath("$.error.code").value("A001"))
+            .andExpect(jsonPath("$.error.message").value("Unauthorized access"));
     }
 
     @Test

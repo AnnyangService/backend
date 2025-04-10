@@ -1,4 +1,4 @@
-package com.annyang.member.domain;
+package com.annyang.member.entity;
 
 public enum Role {
     USER, ADMIN
