@@ -4,7 +4,7 @@ import com.annyang.Main;
 import com.annyang.config.TestSecurityConfig;
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
-import com.annyang.auth.jwt.JwtTokenProvider;
+import com.annyang.auth.token.JwtTokenProvider;
 import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;

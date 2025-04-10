@@ -1,4 +1,4 @@
-package com.annyang.config;
+package com.annyang.global.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
