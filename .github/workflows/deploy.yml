@@ -34,20 +34,21 @@ jobs:
         DB_URL=$(aws ssm get-parameter --name "/myapp/prod/db_url" --with-decryption --query "Parameter.Value" --output text)
         DB_USERNAME=$(aws ssm get-parameter --name "/myapp/prod/db_username" --with-decryption --query "Parameter.Value" --output text)
         DB_PASSWORD=$(aws ssm get-parameter --name "/myapp/prod/db_password" --with-decryption --query "Parameter.Value" --output text)
-        SSH_USER=$(aws ssm get-parameter --name "/myapp/prod/ssh_user" --with-decryption --query "Parameter.Value" --output text)
-        SSH_PRIVATE_KEY=$(aws ssm get-parameter --name "/myapp/prod/ssh_private_key" --with-decryption --query "Parameter.Value" --output text)
         
-        # 민감한 정보는 GITHUB_OUTPUT에 저장하지 않고 환경 변수 파일에 저장
-        echo "SSH_USER=$SSH_USER" >> $GITHUB_OUTPUT
+        # CodeDeploy 관련 파라미터 가져오기
+        CODEDEPLOY_APP_NAME=$(aws ssm get-parameter --name "/annyang/deploy/api-server/app_name" --query "Parameter.Value" --output text)
+        CODEDEPLOY_GROUP_NAME=$(aws ssm get-parameter --name "/annyang/deploy/api-server/group_name" --query "Parameter.Value" --output text)
+        CODEDEPLOY_BUCKET=$(aws ssm get-parameter --name "/annyang/deploy/api-server/bucket" --query "Parameter.Value" --output text)
+        
         echo "DB_URL=$DB_URL" >> $GITHUB_ENV
         echo "DB_USERNAME=$DB_USERNAME" >> $GITHUB_ENV
         echo "DB_PASSWORD=$DB_PASSWORD" >> $GITHUB_ENV
-        # SSH 키는 여러 줄로 구성되어 있어 특별한 구문(<<EOF)을 사용해야 합니다.
-        # 이 구문은, 시작(<<EOF), 내용, 끝(EOF)의 형식으로 여러 줄 텍스트를 환경 변수에 저장합니다.
-        echo "SSH_PRIVATE_KEY<<EOF" >> $GITHUB_ENV
-        echo "$SSH_PRIVATE_KEY" >> $GITHUB_ENV
-        echo "EOF" >> $GITHUB_ENV
-
+        
+        # CodeDeploy 파라미터를 환경 변수로 저장
+        echo "CODEDEPLOY_APP_NAME=$CODEDEPLOY_APP_NAME" >> $GITHUB_ENV
+        echo "CODEDEPLOY_GROUP_NAME=$CODEDEPLOY_GROUP_NAME" >> $GITHUB_ENV
+        echo "CODEDEPLOY_BUCKET=$CODEDEPLOY_BUCKET" >> $GITHUB_ENV
+        
     - name: Variable Substitution
       uses: microsoft/variable-substitution@v1
       with:
@@ -64,58 +65,30 @@ jobs:
         
     - name: Build with Gradle
       run: ./gradlew build  # 테스트 포함
-        
-    - name: Get GitHub Actions IP
-      id: get-ip
-      run: |
-        echo "IP=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
-        
-    - name: Add IP to Security Group
-      run: |
-        aws ec2 authorize-security-group-ingress \
-          --group-id ${{ secrets.AWS_SECURITY_GROUP_ID }} \
-          --protocol tcp \
-          --port 22 \
-          --cidr ${{ steps.get-ip.outputs.IP }}/32
-          
-    - name: Get EC2 Instance IP
-      id: get-ec2-ip
-      run: |
-        INSTANCE_IP=$(aws ssm get-parameter \
-          --name "/myapp/prod/instance-ip" \
-          --with-decryption \
-          --query "Parameter.Value" \
-          --output text)
-        echo "SSH_HOST=$INSTANCE_IP" >> $GITHUB_OUTPUT
-
-    - name: Setup SSH key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-          
+    
     - name: Set JAR filename
       id: jar-filename
       run: |
         echo "JAR_FILE=$(ls build/libs/hi_meow-*.jar | xargs basename)" >> $GITHUB_OUTPUT
         
-    - name: Deploy JAR and Update Symlink
+    - name: Prepare Deployment Bundle
       run: |
-        scp -o StrictHostKeyChecking=no \
-            -i ~/.ssh/deploy_key \
-            build/libs/${{ steps.jar-filename.outputs.JAR_FILE }} \
-            ${{ steps.get-ssm-params.outputs.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }}:/app/
+        mkdir -p codedeploy-bundle
+        cp build/libs/${{ steps.jar-filename.outputs.JAR_FILE }} codedeploy-bundle/
+        cp .github/deploy/appspec.yml codedeploy-bundle/
+        cp -r .github/deploy/scripts codedeploy-bundle/
+        cd codedeploy-bundle
+        zip -r ../deploy.zip .
+        cd ..
         
-        ssh -o StrictHostKeyChecking=no \
-            -i ~/.ssh/deploy_key \
-            ${{ steps.get-ssm-params.outputs.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }} \
-            'cd /app && sudo systemctl stop myapp && ln -sfn ${{ steps.jar-filename.outputs.JAR_FILE }} myapp.jar && sudo systemctl start myapp'
-             
-    - name: Remove IP from Security Group
-      if: always()  # 이전 단계가 실패하더라도 실행
+    - name: Upload to S3
       run: |
-        aws ec2 revoke-security-group-ingress \
-          --group-id ${{ secrets.AWS_SECURITY_GROUP_ID }} \
-          --protocol tcp \
-          --port 22 \
-          --cidr ${{ steps.get-ip.outputs.IP }}/32 
+        aws s3 cp deploy.zip s3://${{ env.CODEDEPLOY_BUCKET }}/hi-meow-app/deploy-${{ github.run_number }}.zip
+        
+    - name: Create CodeDeploy Deployment
+      run: |
+        aws deploy create-deployment \
+          --application-name ${{ env.CODEDEPLOY_APP_NAME }} \
+          --deployment-group-name ${{ env.CODEDEPLOY_GROUP_NAME }} \
+          --s3-location bucket=${{ env.CODEDEPLOY_BUCKET }},key=hi-meow-app/deploy-${{ github.run_number }}.zip,bundleType=zip \
+          --description "Deployment from GitHub Actions workflow" 
