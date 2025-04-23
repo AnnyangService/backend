@@ -22,14 +22,40 @@ jobs:
         java-version: '17'
         distribution: 'corretto'
 
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+        aws-region: ap-northeast-2
+        
+    - name: Get Parameters from SSM
+      id: get-ssm-params
+      run: |
+        DB_URL=$(aws ssm get-parameter --name "/myapp/prod/db_url" --with-decryption --query "Parameter.Value" --output text)
+        DB_USERNAME=$(aws ssm get-parameter --name "/myapp/prod/db_username" --with-decryption --query "Parameter.Value" --output text)
+        DB_PASSWORD=$(aws ssm get-parameter --name "/myapp/prod/db_password" --with-decryption --query "Parameter.Value" --output text)
+        SSH_USER=$(aws ssm get-parameter --name "/myapp/prod/ssh_user" --with-decryption --query "Parameter.Value" --output text)
+        SSH_PRIVATE_KEY=$(aws ssm get-parameter --name "/myapp/prod/ssh_private_key" --with-decryption --query "Parameter.Value" --output text)
+        
+        # 민감한 정보는 GITHUB_OUTPUT에 저장하지 않고 환경 변수 파일에 저장
+        echo "SSH_USER=$SSH_USER" >> $GITHUB_OUTPUT
+        echo "DB_URL=$DB_URL" >> $GITHUB_ENV
+        echo "DB_USERNAME=$DB_USERNAME" >> $GITHUB_ENV
+        echo "DB_PASSWORD=$DB_PASSWORD" >> $GITHUB_ENV
+        # SSH 키는 여러 줄로 구성되어 있어 특별한 구문(<<EOF)을 사용해야 합니다.
+        # 이 구문은, 시작(<<EOF), 내용, 끝(EOF)의 형식으로 여러 줄 텍스트를 환경 변수에 저장합니다.
+        echo "SSH_PRIVATE_KEY<<EOF" >> $GITHUB_ENV
+        echo "$SSH_PRIVATE_KEY" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
     - name: Variable Substitution
       uses: microsoft/variable-substitution@v1
       with:
         files: 'src/main/resources/application-prod.yml'
       env:
-        spring.datasource.url: ${{ secrets.DB_URL }}
-        spring.datasource.username: ${{ secrets.DB_USERNAME }}
-        spring.datasource.password: ${{ secrets.DB_PASSWORD }}
+        spring.datasource.url: ${{ env.DB_URL }}
+        spring.datasource.username: ${{ env.DB_USERNAME }}
+        spring.datasource.password: ${{ env.DB_PASSWORD }}
         jwt.secret: ${{ secrets.JWT_SECRET }}
         jwt.expiration: ${{ secrets.JWT_EXPIRATION }}
 
@@ -38,12 +64,6 @@ jobs:
         
     - name: Build with Gradle
       run: ./gradlew build  # 테스트 포함
-      
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-        aws-region: ap-northeast-2
         
     - name: Get GitHub Actions IP
       id: get-ip
@@ -71,7 +91,7 @@ jobs:
     - name: Setup SSH key
       run: |
         mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        echo "${{ env.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
           
     - name: Set JAR filename
@@ -84,11 +104,11 @@ jobs:
         scp -o StrictHostKeyChecking=no \
             -i ~/.ssh/deploy_key \
             build/libs/${{ steps.jar-filename.outputs.JAR_FILE }} \
-            ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }}:/app/
+            ${{ steps.get-ssm-params.outputs.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }}:/app/
         
         ssh -o StrictHostKeyChecking=no \
             -i ~/.ssh/deploy_key \
-            ${{ secrets.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }} \
+            ${{ steps.get-ssm-params.outputs.SSH_USER }}@${{ steps.get-ec2-ip.outputs.SSH_HOST }} \
             'cd /app && sudo systemctl stop myapp && ln -sfn ${{ steps.jar-filename.outputs.JAR_FILE }} myapp.jar && sudo systemctl start myapp'
              
     - name: Remove IP from Security Group
