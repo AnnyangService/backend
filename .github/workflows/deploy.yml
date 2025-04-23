@@ -74,7 +74,7 @@ jobs:
     - name: Prepare Deployment Bundle
       run: |
         mkdir -p codedeploy-bundle
-        cp build/libs/${{ steps.jar-filename.outputs.JAR_FILE }} codedeploy-bundle/
+        cp build/libs/${{ steps.jar-filename.outputs.JAR_FILE }} codedeploy-bundle/hi-meow-app.jar
         cp .github/deploy/appspec.yml codedeploy-bundle/
         cp -r .github/deploy/scripts codedeploy-bundle/
         cd codedeploy-bundle
