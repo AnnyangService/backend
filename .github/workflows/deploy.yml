@@ -31,9 +31,9 @@ jobs:
     - name: Get Parameters from SSM
       id: get-ssm-params
       run: |
-        DB_URL=$(aws ssm get-parameter --name "/myapp/prod/db_url" --with-decryption --query "Parameter.Value" --output text)
-        DB_USERNAME=$(aws ssm get-parameter --name "/myapp/prod/db_username" --with-decryption --query "Parameter.Value" --output text)
-        DB_PASSWORD=$(aws ssm get-parameter --name "/myapp/prod/db_password" --with-decryption --query "Parameter.Value" --output text)
+        DB_URL=$(aws ssm get-parameter --name "/annyang/db/url" --with-decryption --query "Parameter.Value" --output text)
+        DB_USERNAME=$(aws ssm get-parameter --name "/annyang/db/username" --with-decryption --query "Parameter.Value" --output text)
+        DB_PASSWORD=$(aws ssm get-parameter --name "/annyang/db/password" --with-decryption --query "Parameter.Value" --output text)
         
         # CodeDeploy 관련 파라미터 가져오기
         CODEDEPLOY_APP_NAME=$(aws ssm get-parameter --name "/annyang/deploy/api-server/app_name" --query "Parameter.Value" --output text)
