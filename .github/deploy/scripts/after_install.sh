@@ -1,6 +1,6 @@
 #!/bin/bash
 cd /app
-latest_jar=$(ls -t hi_meow-*.jar | head -1)
+latest_jar=$(ls -t hi-meow-*.jar | head -1)
 ln -sf $latest_jar myapp.jar
 chmod +x /app/myapp.jar
 
