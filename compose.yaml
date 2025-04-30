@@ -8,3 +8,22 @@ services:
       - 'MARIADB_ROOT_PASSWORD=1234'
     ports:
       - '3306:3306'
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  spring-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    environment:
+      - 'SPRING_PROFILES_ACTIVE=local'
+      - 'SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/hi_meow'
+      - 'SPRING_DATASOURCE_USERNAME=admin'
+      - 'SPRING_DATASOURCE_PASSWORD=1234'
+    depends_on:
+      - mariadb
+
+volumes:
+  mariadb_data:
