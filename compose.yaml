@@ -8,3 +8,31 @@ services:
       - 'MARIADB_ROOT_PASSWORD=1234'
     ports:
       - '3306:3306'
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: mariadb --user=root --password=1234 -e 'SELECT 1;'
+      interval: 1s
+      timeout: 1s
+      retries: 5
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  spring-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    environment:
+      - 'SPRING_PROFILES_ACTIVE=local'
+      - 'SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/hi_meow'
+      - 'SPRING_DATASOURCE_USERNAME=admin'
+      - 'SPRING_DATASOURCE_PASSWORD=1234'
+      - 'LOGGING_LEVEL_ROOT=INFO'
+      - 'LOGGING_LEVEL_COM_EXAMPLE=DEBUG'
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+volumes:
+  mariadb_data:

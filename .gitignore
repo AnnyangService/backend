@@ -3,6 +3,7 @@
 *.class
 *.jar
 *.log
+bin/
 
 ### Gradle ###
 .gradle/
@@ -24,6 +25,3 @@ out/
 ### macOS ###
 .DS_Store
 
-### Application Specific ###
-application-local.yml
-application-dev.yml
