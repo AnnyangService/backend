@@ -2,7 +2,7 @@ FROM gradle:jdk17 as builder
 
 WORKDIR /app
 COPY . .
-RUN gradle build -x test
+RUN ./gradlew clean build
 
 FROM openjdk:17-slim
 
