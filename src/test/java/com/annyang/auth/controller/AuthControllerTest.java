@@ -192,16 +192,26 @@ class AuthControllerTest {
         String email = "test@example.com";
         String name = "Test User";
         Member member = memberRepository.save(new Member(email, passwordEncoder.encode("password123"), name));
-        String token = tokenProvider.createToken(email, List.of("ROLE_USER"));
+        
+        // 로그인하여 JWT 토큰 쿠키 획득
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(email);
+        loginRequest.setPassword("password123");
+        
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andReturn();
+        
+        Cookie jwtCookie = loginResult.getResponse().getCookie("jwt");
 
-        // when
-        ResultActions result = mockMvc.perform(get("/auth/me")
-            .header("Authorization", "Bearer " + token));
-
-        // then
-        result.andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.email").value(email))
-            .andExpect(jsonPath("$.data.name").value(name));
+        // when & then
+        mockMvc.perform(get("/auth/me")
+                .cookie(jwtCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value(email))
+                .andExpect(jsonPath("$.data.name").value(name));
     }
 
     @Test
