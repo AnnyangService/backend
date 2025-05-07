@@ -18,7 +18,10 @@ public enum ErrorCode {
 
     // 회원
     MEMBER_NOT_FOUND("M001", "Member not found", HttpStatus.NOT_FOUND),
-    DUPLICATED_EMAIL("M002", "Email already exists", HttpStatus.BAD_REQUEST);
+    DUPLICATED_EMAIL("M002", "Email already exists", HttpStatus.BAD_REQUEST),
+
+    // 고양이
+    CAT_NOT_FOUND("C001", "Cat not found", HttpStatus.NOT_FOUND);
 
     private final String code;
     private final String message;
