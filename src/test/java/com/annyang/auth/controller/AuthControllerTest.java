@@ -8,6 +8,7 @@ import com.annyang.auth.token.JwtTokenProvider;
 import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -211,5 +212,42 @@ class AuthControllerTest {
 
         // then
         result.andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공")
+    void logoutSuccess() throws Exception {
+        // given
+        memberRepository.save(member);
+        
+        // 로그인하여 JWT 토큰 쿠키 획득
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail(signUpRequest.getEmail());
+        loginRequest.setPassword(signUpRequest.getPassword());
+        
+        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andReturn();
+        
+        Cookie jwtCookie = loginResult.getResponse().getCookie("jwt");
+        
+        // when & then
+        MvcResult logoutResult = mockMvc.perform(post("/auth/logout")
+                .cookie(jwtCookie))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value("로그아웃되었습니다."))
+                .andExpect(cookie().maxAge("jwt", 0))
+                .andExpect(cookie().httpOnly("jwt", true))
+                .andExpect(cookie().secure("jwt", true))
+                .andExpect(cookie().path("jwt", "/"))
+                .andExpect(cookie().domain("jwt", "localhost"))
+                .andReturn();
+        
+        // 로그아웃 후 /auth/me 접근 시도
+        mockMvc.perform(get("/auth/me")
+                .cookie(logoutResult.getResponse().getCookie("jwt")))
+                .andExpect(status().isUnauthorized());
     }
 } 

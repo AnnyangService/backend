@@ -5,6 +5,7 @@ import com.annyang.auth.token.JwtTokenProvider;
 import com.annyang.global.exception.CustomAuthenticationEntryPoint;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -22,6 +23,7 @@ import java.util.Arrays;
 
 @TestConfiguration
 @EnableWebSecurity
+@Profile("test")
 public class TestSecurityConfig {
 
     private final JwtTokenProvider tokenProvider;
@@ -34,19 +36,20 @@ public class TestSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .httpBasic(httpBasic -> httpBasic.disable())
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(exceptionHandling -> 
-                exceptionHandling.authenticationEntryPoint(new CustomAuthenticationEntryPoint())
-            )
+            .formLogin(formLogin -> formLogin.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/signup", "/auth/login").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/health").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
                 UsernamePasswordAuthenticationFilter.class);
-        
         return http.build();
     }
 
@@ -55,7 +58,8 @@ public class TestSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:80", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
 
@@ -65,12 +69,12 @@ public class TestSecurityConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
-        return configuration.getAuthenticationManager();
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 } 

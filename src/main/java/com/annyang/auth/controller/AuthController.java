@@ -10,6 +10,7 @@ import com.annyang.member.entity.Member;
 import com.annyang.member.exception.EmailDuplicateException;
 import com.annyang.member.repository.MemberRepository;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -79,6 +80,31 @@ public class AuthController {
         } catch (Exception e) {
             throw new UnauthorizedException();
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
+        // SecurityContext 초기화
+        SecurityContextHolder.clearContext();
+
+        // JWT 쿠키 삭제
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("jwt".equals(cookie.getName())) {
+                    Cookie newCookie = new Cookie("jwt", null);
+                    newCookie.setHttpOnly(true);
+                    newCookie.setSecure(true);
+                    newCookie.setPath("/");
+                    newCookie.setMaxAge(0); // 쿠키 즉시 만료
+                    newCookie.setDomain("localhost");
+                    response.addCookie(newCookie);
+                    break;
+                }
+            }
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("로그아웃되었습니다."));
     }
 
     @GetMapping("/me")
