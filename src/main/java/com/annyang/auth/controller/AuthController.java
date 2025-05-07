@@ -9,6 +9,8 @@ import com.annyang.global.response.ApiResponse;
 import com.annyang.member.entity.Member;
 import com.annyang.member.exception.EmailDuplicateException;
 import com.annyang.member.repository.MemberRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -51,7 +53,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, String>>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
@@ -59,11 +63,19 @@ public class AuthController {
             List<String> roles = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
             String token = tokenProvider.createToken(authentication.getName(), roles);
             
-            Map<String, String> response = new HashMap<>();
-            response.put("token", token);
-            response.put("message", "로그인 성공");
+            // JWT 토큰을 쿠키에 설정
+            Cookie cookie = new Cookie("jwt", token);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(true); // HTTPS에서만 전송
+            cookie.setPath("/");
+            cookie.setMaxAge(24 * 60 * 60); // 24시간
+            cookie.setDomain("localhost");
+            response.addCookie(cookie);
             
-            return ResponseEntity.ok(ApiResponse.success(response));
+            Map<String, String> responseBody = new HashMap<>();
+            responseBody.put("message", "로그인 성공");
+            
+            return ResponseEntity.ok(ApiResponse.success(responseBody));
         } catch (Exception e) {
             throw new UnauthorizedException();
         }

@@ -28,6 +28,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -114,24 +115,24 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.token").exists())
             .andExpect(jsonPath("$.data.message").value("로그인 성공"))
-            .andExpect(jsonPath("$.error").doesNotExist())
+            .andExpect(cookie().exists("jwt"))
+            .andExpect(cookie().httpOnly("jwt", true))
+            .andExpect(cookie().secure("jwt", true))
+            .andExpect(cookie().path("jwt", "/"))
+            .andExpect(cookie().domain("jwt", "localhost"))
             .andReturn();
 
-        String responseBody = result.getResponse().getContentAsString();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> response = objectMapper.readValue(responseBody, Map.class);
-        @SuppressWarnings("unchecked")
-        Map<String, String> data = (Map<String, String>) response.get("data");
-        String token = data.get("token");
-
-        // JWT 토큰 검증
-        assertThat(token).isNotNull();
-        assertThat(tokenProvider.validateToken(token)).isTrue();
-        Authentication authentication = tokenProvider.getAuthentication(token);
-        assertThat(authentication.getName()).isEqualTo(loginRequest.getEmail());
+        // 쿠키에서 JWT 토큰 추출
+        String jwtToken = result.getResponse().getCookie("jwt").getValue();
         
+        // JWT 토큰으로 /auth/me 엔드포인트 테스트
+        mockMvc.perform(get("/auth/me")
+                .cookie(result.getResponse().getCookie("jwt")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value(loginRequest.getEmail()))
+                .andExpect(jsonPath("$.data.name").value(signUpRequest.getName()));
     }
 
     @Test
