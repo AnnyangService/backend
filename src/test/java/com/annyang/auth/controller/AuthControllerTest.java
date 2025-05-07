@@ -19,11 +19,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -178,5 +181,34 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("내 정보 조회 성공")
+    void meSuccess() throws Exception {
+        // given
+        String email = "test@example.com";
+        String name = "Test User";
+        Member member = memberRepository.save(new Member(email, passwordEncoder.encode("password123"), name));
+        String token = tokenProvider.createToken(email, List.of("ROLE_USER"));
+
+        // when
+        ResultActions result = mockMvc.perform(get("/auth/me")
+            .header("Authorization", "Bearer " + token));
+
+        // then
+        result.andExpect(status().isOk())
+            .andExpect(jsonPath("$.data.email").value(email))
+            .andExpect(jsonPath("$.data.name").value(name));
+    }
+
+    @Test
+    @DisplayName("인증되지 않은 사용자의 내 정보 조회 실패")
+    void meFailWhenUnauthenticated() throws Exception {
+        // when
+        ResultActions result = mockMvc.perform(get("/auth/me"));
+
+        // then
+        result.andExpect(status().isUnauthorized());
     }
 } 

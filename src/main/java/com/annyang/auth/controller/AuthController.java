@@ -1,6 +1,7 @@
 package com.annyang.auth.controller;
 
 import com.annyang.auth.dto.LoginRequest;
+import com.annyang.auth.dto.MeResponse;
 import com.annyang.auth.dto.SignUpRequest;
 import com.annyang.auth.exception.UnauthorizedException;
 import com.annyang.auth.token.JwtTokenProvider;
@@ -15,6 +16,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -65,5 +67,16 @@ public class AuthController {
         } catch (Exception e) {
             throw new UnauthorizedException();
         }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<MeResponse>> me() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        Member member = memberRepository.findByEmail(email)
+            .orElseThrow(UnauthorizedException::new);
+            
+        return ResponseEntity.ok(ApiResponse.success(new MeResponse(member.getEmail(), member.getName())));
     }
 } 
