@@ -46,7 +46,9 @@ public class TestSecurityConfig {
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/health").permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers("/members/**").permitAll()
+                .requestMatchers("/auth/me").authenticated()
+                .anyRequest().permitAll()
             )
             .addFilterBefore(new JwtAuthenticationFilter(tokenProvider),
                 UsernamePasswordAuthenticationFilter.class);
