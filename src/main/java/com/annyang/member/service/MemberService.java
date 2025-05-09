@@ -36,7 +36,7 @@ public class MemberService {
     }
 
     @Transactional(readOnly = true)
-    public MemberResponse getMember(Long id) {
+    public MemberResponse getMember(String id) {
         return memberRepository.findById(id)
                 .map(MemberResponse::from)
                 .orElseThrow(MemberNotFoundException::new);
@@ -49,7 +49,7 @@ public class MemberService {
                 .toList();
     }
 
-    public MemberResponse updateMember(Long id, MemberRequest request) {
+    public MemberResponse updateMember(String id, MemberRequest request) {
         Member member = memberRepository.findById(id)
                 .orElseThrow(MemberNotFoundException::new);
 
@@ -68,7 +68,7 @@ public class MemberService {
         return MemberResponse.from(memberRepository.save(updatedMember));
     }
 
-    public void deleteMember(Long id) {
+    public void deleteMember(String id) {
         if (!memberRepository.existsById(id)) {
             throw new MemberNotFoundException();
         }

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.github.f4b6a3.ulid.UlidCreator;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,8 +22,7 @@ import java.util.List;
 public class Member implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
 
     @NotBlank(message = "이메일은 필수입니다")
     @Email(message = "올바른 이메일 형식이 아닙니다")
@@ -46,7 +46,14 @@ public class Member implements UserDetails {
         this.role = Role.USER;
     }
 
-    public void setId(Long id) {
+    @PrePersist
+    public void generateId() {
+        if (id == null) {
+            id = UlidCreator.getUlid().toString();
+        }
+    }
+
+    public void setId(String id) {
         this.id = id;
     }
 

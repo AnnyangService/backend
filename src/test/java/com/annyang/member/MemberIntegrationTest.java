@@ -101,7 +101,7 @@ class MemberIntegrationTest {
     @DisplayName("존재하지 않는 회원을 조회하면 예외가 발생한다")
     @WithMockUser(username = "test@example.com")
     void getMemberNotFound() throws Exception {
-        mockMvc.perform(get("/members/{id}", 999L)) // 존재하지 않는 ID
+        mockMvc.perform(get("/members/{id}", "01HXSAXEAASYJY0VZ7J2VPHCX8")) // 존재하지 않는 ULID
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("M001"))
@@ -135,7 +135,7 @@ class MemberIntegrationTest {
     void updateMemberNotFound() throws Exception {
         MemberRequest updateRequest = new MemberRequest("test@example.com", "newpassword123", "김철수");
 
-        mockMvc.perform(put("/members/{id}", 999L) // 존재하지 않는 ID
+        mockMvc.perform(put("/members/{id}", "01HXSAXEAASYJY0VZ7J2VPHCX8") // 존재하지 않는 ULID
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest)))
                 .andExpect(status().isNotFound())
@@ -161,7 +161,7 @@ class MemberIntegrationTest {
     @DisplayName("존재하지 않는 회원을 삭제하면 예외가 발생한다")
     @WithMockUser(username = "test@example.com")
     void deleteMemberNotFound() throws Exception {
-        mockMvc.perform(delete("/members/{id}", 999L)) // 존재하지 않는 ID
+        mockMvc.perform(delete("/members/{id}", "01HXSAXEAASYJY0VZ7J2VPHCX8")) // 존재하지 않는 ULID
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.error.code").value("M001"))

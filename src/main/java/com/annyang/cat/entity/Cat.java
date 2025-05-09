@@ -3,20 +3,19 @@ package com.annyang.cat.entity;
 import com.annyang.member.entity.Member;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
-import lombok.Data;
-import java.time.LocalDate;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.PrePersist;
+import lombok.Data;
+import java.time.LocalDate;
+import com.github.f4b6a3.ulid.UlidCreator;
 
 @Entity
 @Data
 public class Cat {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     
     private String name;
@@ -39,4 +38,11 @@ public class Cat {
     @ManyToOne
     @JoinColumn(name = "member_id")
     private Member member;
+
+    @PrePersist
+    public void generateId() {
+        if (id == null) {
+            id = UlidCreator.getUlid().toString();
+        }
+    }
 }

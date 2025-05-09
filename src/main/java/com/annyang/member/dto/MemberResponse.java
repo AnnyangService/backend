@@ -3,7 +3,7 @@ package com.annyang.member.dto;
 import com.annyang.member.entity.Member;
 
 public record MemberResponse(
-        Long id,
+        String id,
         String email,
         String name
 ) {
