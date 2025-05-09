@@ -2,6 +2,7 @@ package com.annyang.cat.controller;
 
 import com.annyang.cat.dto.CatRegisterRequest;
 import com.annyang.cat.entity.Cat;
+import com.annyang.cat.entity.Gender;
 import com.annyang.cat.service.CatService;
 import com.annyang.Main;
 import com.annyang.member.entity.Member;
@@ -17,6 +18,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -51,11 +54,11 @@ class CatControllerTest {
         // 테스트용 고양이 등록 요청 데이터 생성
         catRegisterRequest = new CatRegisterRequest();
         catRegisterRequest.setName("Test Cat");
-        catRegisterRequest.setBirthDate("2020-01-01");
+        catRegisterRequest.setBirthDate(LocalDate.of(2020, 1, 1));
         catRegisterRequest.setBreed("Persian");
-        catRegisterRequest.setGender("Male");
-        catRegisterRequest.setWeight("4kg");
-        catRegisterRequest.setLastDiagnosis("2023-01-01");
+        catRegisterRequest.setGender(Gender.MALE);
+        catRegisterRequest.setWeight(4.0);
+        catRegisterRequest.setLastDiagnosis(LocalDate.of(2023, 1, 1));
         catRegisterRequest.setSpecialNotes("Test note");
     }
 
@@ -148,7 +151,7 @@ class CatControllerTest {
 
         // 수정할 데이터 준비
         catRegisterRequest.setName("Updated Cat");
-        catRegisterRequest.setWeight("5kg");
+        catRegisterRequest.setWeight(5.0);
 
         mockMvc.perform(put("/cats/{id}", savedCat.getId())
                 .contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +159,7 @@ class CatControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.name").value("Updated Cat"))
-            .andExpect(jsonPath("$.data.weight").value("5kg"));
+            .andExpect(jsonPath("$.data.weight").value(5.0));
     }
 
     @Test

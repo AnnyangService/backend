@@ -32,6 +32,8 @@ public class CatController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Cat>> getCat(@PathVariable("id") String id) {
+        System.out.println("getCat 호출됨");
+        System.out.println("id: " + id);
         Cat cat = catService.getCat(id);
         return ResponseEntity.ok(ApiResponse.success(cat));
     }

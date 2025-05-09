@@ -8,6 +8,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import lombok.Data;
+import java.time.LocalDate;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 
 @Entity
 @Data
@@ -17,15 +20,23 @@ public class Cat {
     private String id;
     
     private String name;
+    
     private String image;
-    private String birthDate;
+
+    private LocalDate birthDate;
+
     private String breed;
-    private String gender;
-    private String weight;
-    private String lastDiagnosis;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
+    private Double weight;
+
+    private LocalDate lastDiagnosis;
+
     private String specialNotes;
 
     @ManyToOne
     @JoinColumn(name = "member_id")
     private Member member;
-} 
+}

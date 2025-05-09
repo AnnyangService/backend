@@ -38,6 +38,8 @@ public class CatService {
 
     @Transactional(readOnly = true)
     public Cat getCat(String id) {
+        System.out.println("getCat 호출됨");
+        System.out.println("id: " + id);
         return catRepository.findById(id)
                 .orElseThrow(() -> new CatNotFoundException());
     }
