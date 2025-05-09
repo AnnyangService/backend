@@ -20,7 +20,7 @@ public class SecurityUtil {
             throw new UnauthorizedException();
         }
         
-        return memberRepository.findByEmail(authentication.getName())
+        return memberRepository.findById(authentication.getName())
                 .orElseThrow(MemberNotFoundException::new);
     }
 } 

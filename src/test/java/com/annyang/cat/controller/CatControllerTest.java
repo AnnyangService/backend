@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +43,23 @@ class CatControllerTest {
     @Autowired
     private MemberRepository memberRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     private Member testMember;
     private CatRegisterRequest catRegisterRequest;
+
+    private final String USER_ID = "01HXSAXEAASYJY0VZ7J2VPHCX8";
 
     @BeforeEach
     void setUp() {
         // 테스트용 회원 생성
-        testMember = new Member("test@example.com", "password123", "Test User");
+        testMember = new Member(
+            "test@example.com",
+            passwordEncoder.encode("password123"),
+            "Test User"
+        );
+        testMember.setId(USER_ID);
         memberRepository.save(testMember);
 
         // 테스트용 고양이 등록 요청 데이터 생성
@@ -64,7 +75,7 @@ class CatControllerTest {
 
     @Test
     @DisplayName("고양이를 등록할 수 있다")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUser(username = USER_ID)
     void createCat_Success() throws Exception {
         mockMvc.perform(post("/cats")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -86,7 +97,7 @@ class CatControllerTest {
 
     @Test
     @DisplayName("필수 필드가 누락된 경우 고양이를 등록할 수 없다")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUser(username = USER_ID)
     void createCat_ValidationFail() throws Exception {
         catRegisterRequest.setName(null);
         catRegisterRequest.setBreed(null);
@@ -101,10 +112,10 @@ class CatControllerTest {
 
     @Test
     @DisplayName("본인의 고양이 목록을 조회할 수 있다")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUser(username = USER_ID)
     void getCurrentMemberCats_Success() throws Exception {
         // 고양이 등록
-        catService.createCat(catRegisterRequest);
+        Cat savedCat = catService.createCat(catRegisterRequest);
 
         mockMvc.perform(get("/cats"))
             .andExpect(status().isOk())
@@ -122,7 +133,7 @@ class CatControllerTest {
 
     @Test
     @DisplayName("고양이 상세 정보를 조회할 수 있다")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUser(username = USER_ID)
     void getCat_Success() throws Exception {
         // 고양이 등록
         Cat savedCat = catService.createCat(catRegisterRequest);
@@ -136,7 +147,7 @@ class CatControllerTest {
 
     @Test
     @DisplayName("존재하지 않는 고양이를 조회할 수 없다")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUser(username = USER_ID)
     void getCat_NotFound() throws Exception {
         mockMvc.perform(get("/cats/{id}", "non-existent-id"))
             .andExpect(status().isNotFound());
@@ -144,7 +155,7 @@ class CatControllerTest {
 
     @Test
     @DisplayName("고양이 정보를 수정할 수 있다")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUser(username = USER_ID)
     void updateCat_Success() throws Exception {
         // 고양이 등록
         Cat savedCat = catService.createCat(catRegisterRequest);
@@ -164,7 +175,7 @@ class CatControllerTest {
 
     @Test
     @DisplayName("고양이를 삭제할 수 있다")
-    @WithMockUser(username = "test@example.com")
+    @WithMockUser(username = USER_ID)
     void deleteCat_Success() throws Exception {
         // 고양이 등록
         Cat savedCat = catService.createCat(catRegisterRequest);
