@@ -1,5 +1,6 @@
 package com.annyang.member.entity;
 
+import com.annyang.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -18,11 +19,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "members")
-public class Member implements UserDetails {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class Member extends BaseEntity implements UserDetails {
 
     @NotBlank(message = "이메일은 필수입니다")
     @Email(message = "올바른 이메일 형식이 아닙니다")
@@ -46,8 +43,8 @@ public class Member implements UserDetails {
         this.role = Role.USER;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setId(String id) {
+        super.setId(id);
     }
 
     @Override

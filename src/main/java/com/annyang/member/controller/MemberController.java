@@ -28,7 +28,7 @@ public class MemberController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<MemberResponse>> getMember(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<MemberResponse>> getMember(@PathVariable("id") String id) {
         return ResponseEntity.ok(ApiResponse.success(memberService.getMember(id)));
     }
 
@@ -38,12 +38,12 @@ public class MemberController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<MemberResponse>> updateMember(@PathVariable Long id, @RequestBody @Valid MemberRequest request) {
+    public ResponseEntity<ApiResponse<MemberResponse>> updateMember(@PathVariable("id") String id, @RequestBody @Valid MemberRequest request) {
         return ResponseEntity.ok(ApiResponse.success(memberService.updateMember(id, request)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteMember(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteMember(@PathVariable("id") String id) {
         memberService.deleteMember(id);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

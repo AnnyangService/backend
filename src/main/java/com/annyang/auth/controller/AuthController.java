@@ -110,9 +110,9 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MeResponse>> me() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        String id = authentication.getName();
         
-        Member member = memberRepository.findByEmail(email)
+        Member member = memberRepository.findById(id)
             .orElseThrow(UnauthorizedException::new);
             
         return ResponseEntity.ok(ApiResponse.success(new MeResponse(member.getEmail(), member.getName())));

@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -35,8 +36,8 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createToken(String email, List<String> roles) {
-        Claims claims = Jwts.claims().setSubject(email);
+    public String createToken(String id, List<String> roles) {
+        Claims claims = Jwts.claims().setSubject(id);
         claims.put("roles", roles);
 
         Date now = new Date();
@@ -52,12 +53,12 @@ public class JwtTokenProvider {
 
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
-        String username = claims.getSubject();
+        String userId = claims.getSubject();
         List<GrantedAuthority> authorities = ((List<?>) claims.get("roles")).stream()
                 .map(role -> new SimpleGrantedAuthority((String) role))
                 .collect(Collectors.toList());
 
-        UserDetails userDetails = new org.springframework.security.core.userdetails.User(username, "", authorities);
+        UserDetails userDetails = new User(userId, "", authorities);
         return new UsernamePasswordAuthenticationToken(userDetails, token, authorities);
     }
 

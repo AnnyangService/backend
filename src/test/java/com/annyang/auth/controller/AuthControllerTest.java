@@ -1,10 +1,8 @@
 package com.annyang.auth.controller;
 
 import com.annyang.Main;
-import com.annyang.config.TestSecurityConfig;
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
-import com.annyang.auth.token.JwtTokenProvider;
 import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,24 +14,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = {Main.class, TestSecurityConfig.class})
+@SpringBootTest(classes = {Main.class})
 @AutoConfigureMockMvc
 @Transactional
 class AuthControllerTest {
@@ -49,9 +42,6 @@ class AuthControllerTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtTokenProvider tokenProvider;
 
     private SignUpRequest signUpRequest;
     private Member member;
