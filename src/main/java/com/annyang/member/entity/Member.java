@@ -1,5 +1,6 @@
 package com.annyang.member.entity;
 
+import com.annyang.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -10,7 +11,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import com.github.f4b6a3.ulid.UlidCreator;
 
 import java.util.Collection;
 import java.util.List;
@@ -19,10 +19,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "members")
-public class Member implements UserDetails {
-
-    @Id
-    private String id;
+public class Member extends BaseEntity implements UserDetails {
 
     @NotBlank(message = "이메일은 필수입니다")
     @Email(message = "올바른 이메일 형식이 아닙니다")
@@ -46,15 +43,8 @@ public class Member implements UserDetails {
         this.role = Role.USER;
     }
 
-    @PrePersist
-    public void generateId() {
-        if (id == null) {
-            id = UlidCreator.getUlid().toString();
-        }
-    }
-
     public void setId(String id) {
-        this.id = id;
+        super.setId(id);
     }
 
     @Override

@@ -22,26 +22,25 @@ public class CatService {
     public Cat createCat(CatRegisterRequest request) {
         Member currentMember = securityUtil.getCurrentMember();
         
-        Cat cat = new Cat();
-        cat.setMember(currentMember);
-        cat.setName(request.getName());
-        cat.setImage(request.getImage());
-        cat.setBirthDate(request.getBirthDate());
-        cat.setBreed(request.getBreed());
-        cat.setGender(request.getGender());
-        cat.setWeight(request.getWeight());
-        cat.setLastDiagnosis(request.getLastDiagnosis());
-        cat.setSpecialNotes(request.getSpecialNotes());
+        Cat cat = new Cat(
+            request.getName(),
+            request.getImage(),
+            request.getBirthDate(),
+            request.getBreed(),
+            request.getGender(),
+            request.getWeight(),
+            request.getLastDiagnosis(),
+            request.getSpecialNotes(),
+            currentMember
+        );
         
         return catRepository.save(cat);
     }
 
     @Transactional(readOnly = true)
     public Cat getCat(String id) {
-        System.out.println("getCat 호출됨");
-        System.out.println("id: " + id);
         return catRepository.findById(id)
-                .orElseThrow(() -> new CatNotFoundException());
+                .orElseThrow(CatNotFoundException::new);
     }
 
     @Transactional(readOnly = true)
@@ -52,14 +51,16 @@ public class CatService {
 
     public Cat updateCat(String id, Cat catDetails) {
         Cat cat = getCat(id);
-        cat.setName(catDetails.getName());
-        cat.setImage(catDetails.getImage());
-        cat.setBirthDate(catDetails.getBirthDate());
-        cat.setBreed(catDetails.getBreed());
-        cat.setGender(catDetails.getGender());
-        cat.setWeight(catDetails.getWeight());
-        cat.setLastDiagnosis(catDetails.getLastDiagnosis());
-        cat.setSpecialNotes(catDetails.getSpecialNotes());
+        cat.update(
+            catDetails.getName(),
+            catDetails.getImage(),
+            catDetails.getBirthDate(),
+            catDetails.getBreed(),
+            catDetails.getGender(),
+            catDetails.getWeight(),
+            catDetails.getLastDiagnosis(),
+            catDetails.getSpecialNotes()
+        );
         return catRepository.save(cat);
     }
 

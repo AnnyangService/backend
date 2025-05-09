@@ -1,22 +1,21 @@
 package com.annyang.cat.entity;
 
+import com.annyang.global.entity.BaseEntity;
 import com.annyang.member.entity.Member;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
-import jakarta.persistence.PrePersist;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.AccessLevel;
 import java.time.LocalDate;
-import com.github.f4b6a3.ulid.UlidCreator;
 
 @Entity
-@Data
-public class Cat {
-    @Id
-    private String id;
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Cat extends BaseEntity {
     
     private String name;
     
@@ -39,10 +38,32 @@ public class Cat {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    @PrePersist
-    public void generateId() {
-        if (id == null) {
-            id = UlidCreator.getUlid().toString();
-        }
+    public Cat(String name, String image, LocalDate birthDate, String breed, 
+              Gender gender, Double weight, LocalDate lastDiagnosis, String specialNotes, Member member) {
+        this.name = name;
+        this.image = image;
+        this.birthDate = birthDate;
+        this.breed = breed;
+        this.gender = gender;
+        this.weight = weight;
+        this.lastDiagnosis = lastDiagnosis;
+        this.specialNotes = specialNotes;
+        this.member = member;
+    }
+
+    public void update(String name, String image, LocalDate birthDate, String breed,
+                      Gender gender, Double weight, LocalDate lastDiagnosis, String specialNotes) {
+        this.name = name;
+        this.image = image;
+        this.birthDate = birthDate;
+        this.breed = breed;
+        this.gender = gender;
+        this.weight = weight;
+        this.lastDiagnosis = lastDiagnosis;
+        this.specialNotes = specialNotes;
+    }
+
+    public void setMember(Member member) {
+        this.member = member;
     }
 }
