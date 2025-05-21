@@ -9,9 +9,6 @@ import com.annyang.global.response.ApiResponse;
 import com.annyang.member.entity.Member;
 import com.annyang.member.exception.EmailDuplicateException;
 import com.annyang.member.repository.MemberRepository;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -55,56 +52,26 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, String>>> login(
-            @Valid @RequestBody LoginRequest request,
-            HttpServletResponse response) {
+            @Valid @RequestBody LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
-            List<String> roles = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+            
+            List<String> roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+            
             String token = tokenProvider.createToken(authentication.getName(), roles);
             
-            // JWT 토큰을 쿠키에 설정
-            Cookie cookie = new Cookie("jwt", token);
-            cookie.setHttpOnly(true);
-            cookie.setSecure(true); // HTTPS에서만 전송
-            cookie.setPath("/");
-            cookie.setMaxAge(24 * 60 * 60); // 24시간
-            cookie.setDomain("localhost");
-            response.addCookie(cookie);
-            
             Map<String, String> responseBody = new HashMap<>();
+            responseBody.put("accessToken", token);
             responseBody.put("message", "로그인 성공");
             
             return ResponseEntity.ok(ApiResponse.success(responseBody));
         } catch (Exception e) {
             throw new UnauthorizedException();
         }
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(HttpServletRequest request, HttpServletResponse response) {
-        // SecurityContext 초기화
-        SecurityContextHolder.clearContext();
-
-        // JWT 쿠키 삭제
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("jwt".equals(cookie.getName())) {
-                    Cookie newCookie = new Cookie("jwt", null);
-                    newCookie.setHttpOnly(true);
-                    newCookie.setSecure(true);
-                    newCookie.setPath("/");
-                    newCookie.setMaxAge(0); // 쿠키 즉시 만료
-                    newCookie.setDomain("localhost");
-                    response.addCookie(newCookie);
-                    break;
-                }
-            }
-        }
-
-        return ResponseEntity.ok(ApiResponse.success("로그아웃되었습니다."));
     }
 
     @GetMapping("/me")
@@ -117,4 +84,4 @@ public class AuthController {
             
         return ResponseEntity.ok(ApiResponse.success(new MeResponse(member.getEmail(), member.getName())));
     }
-} 
+}

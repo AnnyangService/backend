@@ -11,6 +11,15 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class OpenAPIConfig {
+     String securitySchemeName = "bearerAuth";
+        
+    // Security 스키마 설정
+    SecurityScheme bearerAuth = new SecurityScheme()
+            .type(SecurityScheme.Type.HTTP)
+            .scheme("bearer")
+            .bearerFormat("JWT")
+            .in(SecurityScheme.In.HEADER)
+            .name("Authorization");
     
     @Bean
     public OpenAPI openAPI() {
@@ -18,6 +27,9 @@ public class OpenAPIConfig {
                 .info(new Info()
                         .title("Annyang API")
                         .description("Annyang 프로젝트 API 문서")
-                        .version("1.0.0"));
+                        .version("1.0.0"))
+                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+                .components(new Components()
+                        .addSecuritySchemes(securitySchemeName, bearerAuth));
     }
 } 
