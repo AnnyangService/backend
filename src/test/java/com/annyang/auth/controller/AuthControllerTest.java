@@ -4,7 +4,6 @@ import com.annyang.Main;
 import com.annyang.auth.config.AuthConfig;
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
-import com.annyang.auth.token.JwtTokenProvider;
 import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -114,9 +113,9 @@ class AuthControllerTest {
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.accessToken").exists())
             .andExpect(jsonPath("$.data.message").value("로그인 성공"))
-            .andExpect(cookie().exists(AuthConfig.RefreshToken.NAME))
-            .andExpect(cookie().httpOnly(AuthConfig.RefreshToken.NAME, true))
-            .andExpect(cookie().secure(AuthConfig.RefreshToken.NAME, true));
+            .andExpect(cookie().exists(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
+            .andExpect(cookie().httpOnly(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true))
+            .andExpect(cookie().secure(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true));
     }
 
     @Test
@@ -224,7 +223,7 @@ class AuthControllerTest {
 
     private String getRefreshTokenFromCookie(MvcResult result) {
         return Arrays.stream(result.getResponse().getCookies())
-            .filter(cookie -> cookie.getName().equals(AuthConfig.RefreshToken.NAME))
+            .filter(cookie -> cookie.getName().equals(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
             .findFirst()
             .map(Cookie::getValue)
             .orElseThrow(() -> new IllegalStateException("Refresh token not found in cookies"));
@@ -240,19 +239,19 @@ class AuthControllerTest {
 
         // when
         MvcResult refreshResult = mockMvc.perform(post("/auth/refresh")
-                .cookie(new Cookie(AuthConfig.RefreshToken.NAME, refreshToken)))
+                .cookie(new Cookie(AuthConfig.Cookie.REFRESH_TOKEN_NAME, refreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.accessToken").exists())
-                .andExpect(cookie().exists(AuthConfig.RefreshToken.NAME))
-                .andExpect(cookie().httpOnly(AuthConfig.RefreshToken.NAME, true))
-                .andExpect(cookie().secure(AuthConfig.RefreshToken.NAME, true))
+                .andExpect(cookie().exists(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
+                .andExpect(cookie().httpOnly(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true))
+                .andExpect(cookie().secure(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true))
                 .andReturn();
 
         // then
         String newAccessToken = getAccessToken(refreshResult);
         mockMvc.perform(get("/auth/me")
-                .header("Authorization", "Bearer " + newAccessToken))
+                .header(AuthConfig.Token.AUTHORIZATION_HEADER, AuthConfig.Token.BEARER_TYPE + " " + newAccessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value(signUpRequest.getEmail()))
@@ -273,7 +272,7 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("로그아웃되었습니다."))
-                .andExpect(cookie().exists(AuthConfig.RefreshToken.NAME))
-                .andExpect(cookie().maxAge(AuthConfig.RefreshToken.NAME, 0));
+                .andExpect(cookie().exists(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
+                .andExpect(cookie().maxAge(AuthConfig.Cookie.REFRESH_TOKEN_NAME, 0));
     }
 }

@@ -45,12 +45,12 @@ public class AuthController {
      * @return ResponseCookie
      */
     private ResponseCookie createRefreshTokenCookie(final String refreshToken) {
-        return ResponseCookie.from(AuthConfig.RefreshToken.NAME, refreshToken)
+        return ResponseCookie.from(AuthConfig.Cookie.REFRESH_TOKEN_NAME, refreshToken)
             .httpOnly(true)
             .secure(true)
             .sameSite("Strict")
-            .path(AuthConfig.RefreshToken.PATH)
-            .maxAge(AuthConfig.RefreshToken.MAX_AGE)
+            .path(AuthConfig.Cookie.PATH)
+            .maxAge(AuthConfig.Cookie.MAX_AGE)
             .build();
     }
 
@@ -83,7 +83,7 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .toList();
             
-            String accessToken = tokenProvider.createToken(authentication.getName(), roles);
+            String accessToken = tokenProvider.createAccessToken(authentication.getName(), roles);
             String refreshToken = tokenProvider.createRefreshToken(authentication.getName(), roles);
             
             ResponseCookie cookie = createRefreshTokenCookie(refreshToken);
@@ -101,7 +101,7 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<ApiResponse<Map<String, String>>> refresh(
-            @Parameter(hidden = true) @CookieValue(name = AuthConfig.RefreshToken.NAME) String refreshToken,
+            @Parameter(hidden = true) @CookieValue(name = AuthConfig.Cookie.REFRESH_TOKEN_NAME) String refreshToken,
             HttpServletResponse response) {
         
         if (!tokenProvider.validateToken(refreshToken)) {
@@ -111,7 +111,7 @@ public class AuthController {
         String memberId = tokenProvider.getMemberId(refreshToken);
         List<String> roles = tokenProvider.getRoles(refreshToken);
         
-        String newAccessToken = tokenProvider.createToken(memberId, roles);
+        String newAccessToken = tokenProvider.createAccessToken(memberId, roles);
         String newRefreshToken = tokenProvider.createRefreshToken(memberId, roles);
         
         ResponseCookie cookie = createRefreshTokenCookie(newRefreshToken);
@@ -125,11 +125,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<String>> logout(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from(AuthConfig.RefreshToken.NAME, "")
+        ResponseCookie cookie = ResponseCookie.from(AuthConfig.Cookie.REFRESH_TOKEN_NAME, "")
             .httpOnly(true)
             .secure(true)
             .sameSite("Strict")
-            .path(AuthConfig.RefreshToken.PATH)
+            .path(AuthConfig.Cookie.PATH)
             .maxAge(0)
             .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());

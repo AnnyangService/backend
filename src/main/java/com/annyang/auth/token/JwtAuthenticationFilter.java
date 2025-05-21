@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.annyang.auth.config.AuthConfig;
+
 import io.jsonwebtoken.JwtException;
 
 import java.io.IOException;
@@ -39,8 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+        String bearerToken = request.getHeader(AuthConfig.Token.AUTHORIZATION_HEADER);
+        if (bearerToken != null && bearerToken.startsWith(AuthConfig.Token.BEARER_TYPE)) {
             return bearerToken.substring(7);
         }
         return null;

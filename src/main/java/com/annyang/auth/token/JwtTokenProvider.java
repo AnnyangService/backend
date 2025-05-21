@@ -30,20 +30,17 @@ public class JwtTokenProvider {
     @Value("${jwt.secret}")
     private String secretKey;
 
-    @Value("${jwt.expiration}")
-    private long tokenExpiration;
-
     @PostConstruct
     protected void init() {
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String createToken(String id, List<String> roles) {
+    public String createAccessToken(String id, List<String> roles) {
         Claims claims = Jwts.claims().setSubject(id);
         claims.put("roles", roles);
 
         Date now = new Date();
-        Date expiredAt = new Date(now.getTime() + tokenExpiration * 1000);
+        Date expiredAt = new Date(now.getTime() + AuthConfig.Token.ACCESS_TOKEN_EXPIRE_TIME * 1000);
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -55,7 +52,7 @@ public class JwtTokenProvider {
 
     public String createRefreshToken(String memberId, List<String> roles) {
         Date now = new Date();
-        Date validity = new Date(now.getTime() + AuthConfig.RefreshToken.MAX_AGE * 1000);
+        Date validity = new Date(now.getTime() + AuthConfig.Token.REFRESH_TOKEN_EXPIRE_TIME * 1000);
 
         return Jwts.builder()
                 .setSubject(memberId)
