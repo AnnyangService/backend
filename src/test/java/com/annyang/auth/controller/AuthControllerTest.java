@@ -1,12 +1,13 @@
 package com.annyang.auth.controller;
 
 import com.annyang.Main;
+import com.annyang.auth.config.AuthConfig;
 import com.annyang.auth.dto.LoginRequest;
 import com.annyang.auth.dto.SignUpRequest;
 import com.annyang.member.entity.Member;
 import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.servlet.http.Cookie;
+import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.servlet.http.Cookie;
+
+import java.util.Arrays;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -101,29 +106,16 @@ class AuthControllerTest {
         loginRequest.setPassword(signUpRequest.getPassword());
 
         // when & then
-        MvcResult result = mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.accessToken").exists())
             .andExpect(jsonPath("$.data.message").value("로그인 성공"))
-            .andExpect(cookie().exists("jwt"))
-            .andExpect(cookie().httpOnly("jwt", true))
-            .andExpect(cookie().secure("jwt", true))
-            .andExpect(cookie().path("jwt", "/"))
-            .andExpect(cookie().domain("jwt", "localhost"))
-            .andReturn();
-
-        // 쿠키에서 JWT 토큰 추출
-        String jwtToken = result.getResponse().getCookie("jwt").getValue();
-        
-        // JWT 토큰으로 /auth/me 엔드포인트 테스트
-        mockMvc.perform(get("/auth/me")
-                .cookie(result.getResponse().getCookie("jwt")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.email").value(loginRequest.getEmail()))
-                .andExpect(jsonPath("$.data.name").value(signUpRequest.getName()));
+            .andExpect(cookie().exists(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
+            .andExpect(cookie().httpOnly(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true))
+            .andExpect(cookie().secure(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true));
     }
 
     @Test
@@ -183,7 +175,7 @@ class AuthControllerTest {
         String name = "Test User";
         Member member = memberRepository.save(new Member(email, passwordEncoder.encode("password123"), name));
         
-        // 로그인하여 JWT 토큰 쿠키 획득
+        // 로그인하여 JWT 토큰 획득
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail(email);
         loginRequest.setPassword("password123");
@@ -192,12 +184,12 @@ class AuthControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andReturn();
-        
-        Cookie jwtCookie = loginResult.getResponse().getCookie("jwt");
+
+        String accessToken = JsonPath.read(loginResult.getResponse().getContentAsString(), "$.data.accessToken");
 
         // when & then
         mockMvc.perform(get("/auth/me")
-                .cookie(jwtCookie))
+                .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.email").value(email))
@@ -214,40 +206,73 @@ class AuthControllerTest {
         result.andExpect(status().isUnauthorized());
     }
 
-    @Test
-    @DisplayName("로그아웃 성공")
-    void logoutSuccess() throws Exception {
-        // given
-        memberRepository.save(member);
-        
-        // 로그인하여 JWT 토큰 쿠키 획득
+    private MvcResult performLogin() throws Exception {
         LoginRequest loginRequest = new LoginRequest();
         loginRequest.setEmail(signUpRequest.getEmail());
         loginRequest.setPassword(signUpRequest.getPassword());
-        
-        MvcResult loginResult = mockMvc.perform(post("/auth/login")
+
+        return mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
                 .andReturn();
-        
-        Cookie jwtCookie = loginResult.getResponse().getCookie("jwt");
-        
+    }
+
+    private String getAccessToken(MvcResult result) throws Exception {
+        return JsonPath.read(result.getResponse().getContentAsString(), "$.data.accessToken");
+    }
+
+    private String getRefreshTokenFromCookie(MvcResult result) {
+        return Arrays.stream(result.getResponse().getCookies())
+            .filter(cookie -> cookie.getName().equals(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
+            .findFirst()
+            .map(Cookie::getValue)
+            .orElseThrow(() -> new IllegalStateException("Refresh token not found in cookies"));
+    }
+
+    @Test
+    @DisplayName("리프레시 토큰으로 새로운 액세스 토큰을 발급받고 인증에 성공한다")
+    void refresh_Success() throws Exception {
+        // given
+        memberRepository.save(member);
+        MvcResult loginResult = performLogin();
+        String refreshToken = getRefreshTokenFromCookie(loginResult);
+
+        // when
+        MvcResult refreshResult = mockMvc.perform(post("/auth/refresh")
+                .cookie(new Cookie(AuthConfig.Cookie.REFRESH_TOKEN_NAME, refreshToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.accessToken").exists())
+                .andExpect(cookie().exists(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
+                .andExpect(cookie().httpOnly(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true))
+                .andExpect(cookie().secure(AuthConfig.Cookie.REFRESH_TOKEN_NAME, true))
+                .andReturn();
+
+        // then
+        String newAccessToken = getAccessToken(refreshResult);
+        mockMvc.perform(get("/auth/me")
+                .header(AuthConfig.Token.AUTHORIZATION_HEADER, AuthConfig.Token.BEARER_TYPE + " " + newAccessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.email").value(signUpRequest.getEmail()))
+                .andExpect(jsonPath("$.data.name").value(signUpRequest.getName()));
+    }
+
+    @Test
+    @DisplayName("로그아웃 성공 및 이후 인증 실패 확인")
+    void logout_Success() throws Exception {
+        // given
+        memberRepository.save(member);
+        MvcResult loginResult = performLogin();
+        String accessToken = getAccessToken(loginResult);
+
         // when & then
-        MvcResult logoutResult = mockMvc.perform(post("/auth/logout")
-                .cookie(jwtCookie))
+        mockMvc.perform(post("/auth/logout")
+                .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("로그아웃되었습니다."))
-                .andExpect(cookie().maxAge("jwt", 0))
-                .andExpect(cookie().httpOnly("jwt", true))
-                .andExpect(cookie().secure("jwt", true))
-                .andExpect(cookie().path("jwt", "/"))
-                .andExpect(cookie().domain("jwt", "localhost"))
-                .andReturn();
-        
-        // 로그아웃 후 /auth/me 접근 시도
-        mockMvc.perform(get("/auth/me")
-                .cookie(logoutResult.getResponse().getCookie("jwt")))
-                .andExpect(status().isUnauthorized());
+                .andExpect(cookie().exists(AuthConfig.Cookie.REFRESH_TOKEN_NAME))
+                .andExpect(cookie().maxAge(AuthConfig.Cookie.REFRESH_TOKEN_NAME, 0));
     }
-} 
+}
