@@ -1,5 +1,6 @@
 package com.annyang.global.config;
 
+import com.annyang.auth.config.AuthConfig;
 import com.annyang.auth.token.JwtAuthenticationFilter;
 import com.annyang.auth.token.JwtTokenProvider;
 import com.annyang.global.exception.CustomAuthenticationEntryPoint;
@@ -53,7 +54,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:80", "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:80", "http://localhost:3000", "https://hi-meow.kro.kr"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setExposedHeaders(Arrays.asList("Set-Cookie"));
