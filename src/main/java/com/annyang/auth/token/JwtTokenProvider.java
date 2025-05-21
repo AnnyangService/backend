@@ -13,6 +13,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import com.annyang.auth.config.AuthConfig;
+
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
@@ -51,6 +53,19 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    public String createRefreshToken(String memberId, List<String> roles) {
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + AuthConfig.RefreshToken.MAX_AGE * 1000);
+
+        return Jwts.builder()
+                .setSubject(memberId)
+                .claim("roles", roles)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key)
+                .compact();
+    }
+
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
         String userId = claims.getSubject();
@@ -65,10 +80,33 @@ public class JwtTokenProvider {
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            if(isTokenExpired(token)) {
+                log.info("JWT token is expired");
+                return false;
+            }
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             log.info("Invalid JWT token: {}", e.getMessage());
             return false;
         }
     }
-} 
+
+    public String getMemberId(String token) {
+        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
+    }
+
+    public List<String> getRoles(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+        return (List<String>) claims.get("roles");
+    }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
+            return claims.getExpiration().before(new Date());
+        } catch (JwtException e) {
+            log.info("Invalid JWT token: {}", e.getMessage());
+            return true;
+        }
+    }
+}
