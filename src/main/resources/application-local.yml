@@ -1,9 +1,9 @@
 spring:
   datasource:
-    url: jdbc:mysql://mysql_spring:3306/hi_meow_spring  # mariadb → mysql, 호스트명과 DB명 변경
+    url: jdbc:mysql://mysql_spring:3306/hi_meow
     username: admin
     password: 1234
-    driver-class-name: com.mysql.cj.jdbc.Driver  # MariaDB 드라이버 → MySQL 드라이버
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -11,7 +11,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect  # MariaDBDialect → MySQLDialect
+        dialect: org.hibernate.dialect.MySQLDialect
   mvc:
     cors:
       allowed-origins: http://localhost:80,http://localhost:3000
