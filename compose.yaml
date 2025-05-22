@@ -1,17 +1,17 @@
 services:
-  mariadb:
-    image: 'mariadb:latest'
+  mysql:
+    image: 'mysql:8.0'
     environment:
       - 'MYSQL_DATABASE=hi_meow'
       - 'MYSQL_USER=admin'
       - 'MYSQL_PASSWORD=1234'
-      - 'MARIADB_ROOT_PASSWORD=1234'
+      - 'MYSQL_ROOT_PASSWORD=1234'
     ports:
       - '3306:3306'
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: mariadb --user=root --password=1234 -e 'SELECT 1;'
+      test: mysql --user=root --password=1234 -e 'SELECT 1;'
       interval: 1s
       timeout: 1s
       retries: 5
@@ -25,14 +25,14 @@ services:
       - '8080:8080'
     environment:
       - 'SPRING_PROFILES_ACTIVE=local'
-      - 'SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/hi_meow'
+      - 'SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/hi_meow'
       - 'SPRING_DATASOURCE_USERNAME=admin'
       - 'SPRING_DATASOURCE_PASSWORD=1234'
       - 'LOGGING_LEVEL_ROOT=INFO'
       - 'LOGGING_LEVEL_COM_EXAMPLE=DEBUG'
     depends_on:
-      mariadb:
+      mysql:
         condition: service_healthy
 
 volumes:
-  mariadb_data:
+  mysql_data:
