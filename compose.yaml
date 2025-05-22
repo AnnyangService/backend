@@ -1,17 +1,17 @@
 services:
-  mariadb:
-    image: 'mariadb:latest'
+  mysql_spring:  # mariadb -> mysql로 변경
+    image: 'mysql:8.0'  # mariadb:latest -> mysql:8.0으로 변경
     environment:
-      - 'MYSQL_DATABASE=hi_meow'
+      - 'MYSQL_DATABASE=hi_meow_spring'
       - 'MYSQL_USER=admin'
       - 'MYSQL_PASSWORD=1234'
-      - 'MARIADB_ROOT_PASSWORD=1234'
+      - 'MYSQL_ROOT_PASSWORD=1234'  # MARIADB_ROOT_PASSWORD -> MYSQL_ROOT_PASSWORD로 변경
     ports:
-      - '3306:3306'
+      - '3307:3306'
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - mysql_spring_data:/var/lib/mysql  # mariadb_data -> mysql_data로 변경
     healthcheck:
-      test: mariadb --user=root --password=1234 -e 'SELECT 1;'
+      test: mysql --user=root --password=1234 -e 'SELECT 1;'  # mariadb -> mysql로 변경
       interval: 1s
       timeout: 1s
       retries: 5
@@ -25,14 +25,14 @@ services:
       - '8080:8080'
     environment:
       - 'SPRING_PROFILES_ACTIVE=local'
-      - 'SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/hi_meow'
+      - 'SPRING_DATASOURCE_URL=jdbc:mysql://mysql_spring:3306/hi_meow_spring'  # 호스트 이름 변경
       - 'SPRING_DATASOURCE_USERNAME=admin'
       - 'SPRING_DATASOURCE_PASSWORD=1234'
       - 'LOGGING_LEVEL_ROOT=INFO'
       - 'LOGGING_LEVEL_COM_EXAMPLE=DEBUG'
     depends_on:
-      mariadb:
+      mysql_spring:  # mariadb -> mysql로 변경
         condition: service_healthy
 
 volumes:
-  mariadb_data:
+  mysql_spring_data:  # mariadb_data -> mysql_data로 변경
