@@ -25,3 +25,5 @@ out/
 ### macOS ###
 .DS_Store
 
+### secrets ###
+application-local.yml

@@ -23,3 +23,13 @@ server:
 jwt:
   secret: your-256-bit-secret-key-here-must-be-longer-than-256-bits
   expiration: 86400 # 24시간
+
+
+cloud:
+  aws:
+    region: ap-northeast-2
+    s3:
+      bucket: test-bucket
+    credentials:
+      access-key: test
+      secret-key: test
