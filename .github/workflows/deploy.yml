@@ -59,6 +59,10 @@ jobs:
         spring.datasource.password: ${{ env.DB_PASSWORD }}
         jwt.secret: ${{ secrets.JWT_SECRET }}
         jwt.expiration: ${{ secrets.JWT_EXPIRATION }}
+        cloud.aws.region: ${{ secrets.AWS_REGION }}
+        cloud.aws.s3.bucket: ${{ secrets.AWS_S3_IMAGE_BUCKET }}
+        cloud.aws.credentials.access-key: ${{ secrets.AWS_ACCESS_KEY }}
+        cloud.aws.credentials.secret-key: ${{ secrets.AWS_SECRET_KEY }}
 
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
