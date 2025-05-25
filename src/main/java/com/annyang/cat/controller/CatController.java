@@ -20,7 +20,6 @@ public class CatController {
 
     @PostMapping
     public ResponseEntity<ApiResponse<Cat>> createCat(@Valid @RequestBody CatRegisterRequest request) {
-        System.out.println("Received request to create cat: " + request.getBreed());
         Cat cat = catService.createCat(request);
         return ResponseEntity.ok(ApiResponse.success(cat));
     }
