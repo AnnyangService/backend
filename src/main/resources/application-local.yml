@@ -36,3 +36,11 @@ jwt:
   secret: local-development-secret-key-that-is-at-least-32-characters-long
   expiration: 86400  # 24시간
 
+cloud:
+  aws:
+    region: ${AWS_REGION}
+    s3:
+      bucket: ${AWS_S3_BUCKET}
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
