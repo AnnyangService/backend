@@ -21,7 +21,10 @@ public enum ErrorCode {
     DUPLICATED_EMAIL("M002", "Email already exists", HttpStatus.BAD_REQUEST),
 
     // 고양이
-    CAT_NOT_FOUND("C001", "Cat not found", HttpStatus.NOT_FOUND);
+    CAT_NOT_FOUND("C001", "Cat not found", HttpStatus.NOT_FOUND),
+    
+    // 진단
+    DIAGNOSIS_SERVER_ERROR("D001", "진단 서비스 호출 중 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR);
 
     private final String code;
     private final String message;
