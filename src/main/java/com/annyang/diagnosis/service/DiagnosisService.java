@@ -2,6 +2,7 @@ package com.annyang.diagnosis.service;
 
 import com.annyang.diagnosis.dto.DiagnosisRequest;
 import com.annyang.diagnosis.dto.DiagnosisResponse;
+import com.annyang.diagnosis.exception.DiagnosisException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,11 +29,12 @@ public class DiagnosisService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
     
-    @Value("${ai.server.url:http://localhost:8081}")
+    @Value("${ai.server.url}")
     private String aiServerUrl;
     
     public DiagnosisResponse diagnoseFirstStep(DiagnosisRequest request) {
         try {
+            System.out.println("AI 서버로 진단 요청: " + aiServerUrl + "/diagnosis/step1/");
             // AI 서버로 요청 준비
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -58,12 +60,8 @@ public class DiagnosisService {
                     .build();
             
         } catch (Exception e) {
-            // 에러 발생시 기본값 반환 (실제 구현에서는 적절한 예외 처리 필요)
-            return DiagnosisResponse.builder()
-                    .id(UUID.randomUUID().toString().replace("-", "").substring(0, 30))
-                    .normal(true)
-                    .confidence(0.99)
-                    .build();
+            // 비즈니스 예외로 처리하여 일관된 에러 응답 제공
+            throw new DiagnosisException();
         }
     }
     
