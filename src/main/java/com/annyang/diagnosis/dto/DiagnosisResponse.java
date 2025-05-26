@@ -11,6 +11,6 @@ public class DiagnosisResponse {
     
     private String id;
     @JsonProperty("is_normal")
-    private boolean isNormal;
+    private boolean normal; // isNormal에서 normal로 변경
     private double confidence;
 }

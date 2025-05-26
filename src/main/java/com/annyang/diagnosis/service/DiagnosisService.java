@@ -50,10 +50,10 @@ public class DiagnosisService {
             // 응답 처리
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode data = root.path("data");
-            
+
             return DiagnosisResponse.builder()
                     .id(UUID.randomUUID().toString().replace("-", "").substring(0, 30))
-                    .isNormal(data.path("is_normal").asBoolean())
+                    .normal(data.path("is_normal").asBoolean())
                     .confidence(data.path("confidence").asDouble())
                     .build();
             
@@ -61,7 +61,7 @@ public class DiagnosisService {
             // 에러 발생시 기본값 반환 (실제 구현에서는 적절한 예외 처리 필요)
             return DiagnosisResponse.builder()
                     .id(UUID.randomUUID().toString().replace("-", "").substring(0, 30))
-                    .isNormal(true)
+                    .normal(true)
                     .confidence(0.99)
                     .build();
         }
