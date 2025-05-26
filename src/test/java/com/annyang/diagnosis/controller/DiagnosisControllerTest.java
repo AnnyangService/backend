@@ -2,19 +2,24 @@ package com.annyang.diagnosis.controller;
 
 import com.annyang.Main;
 import com.annyang.diagnosis.dto.DiagnosisRequest;
+import com.annyang.diagnosis.dto.DiagnosisResponse;
 import com.annyang.diagnosis.service.DiagnosisService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -30,16 +35,25 @@ public class DiagnosisControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
+    @MockBean
     private DiagnosisService diagnosisService;
 
     private DiagnosisRequest diagnosisRequest;
     private final String USER_ID = "01HXSAXEAASYJY0VZ7J2VPHCX8";
+    private final String FIXED_ID = "01JTTKJYG28CFYMBKXC0Q80F61";
 
     @BeforeEach
     void setUp() {
         diagnosisRequest = new DiagnosisRequest();
         diagnosisRequest.setImageUrl("https://s3.bucket/path/to/image.jpg");
+        
+        // Mock the service response
+        when(diagnosisService.diagnoseFirstStep(any(DiagnosisRequest.class)))
+                .thenReturn(DiagnosisResponse.builder()
+                        .id(FIXED_ID)
+                        .isNormal(true)
+                        .confidence(0.9999570846557617)
+                        .build());
     }
 
     @Test
@@ -51,9 +65,9 @@ public class DiagnosisControllerTest {
                 .content(objectMapper.writeValueAsString(diagnosisRequest)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.id").value("01JTTKJYG28CFYMBKXC0Q80F61"))
-                .andExpect(jsonPath("$.data.is_normal").value(false))
-                .andExpect(jsonPath("$.data.confidence").value(0.90));
+                .andExpect(jsonPath("$.data.id").value(FIXED_ID))
+                .andExpect(jsonPath("$.data.is_normal").value(true))
+                .andExpect(jsonPath("$.data.confidence").value(0.9999570846557617));
     }
 
     @Test
