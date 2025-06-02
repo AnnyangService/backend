@@ -1,0 +1,50 @@
+package com.annyang.diagnosis.client;
+
+import com.annyang.diagnosis.exception.DiagnosisException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import com.annyang.diagnosis.client.DiagnosisDto.*;
+
+@Component
+@RequiredArgsConstructor
+public class AiServerClient {
+    
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    
+    @Value("${ai.server.url}")
+    private String aiServerUrl;
+
+    public FirstStepResponse requestFirstDiagnosis(String imageUrl) {
+        String endpoint = "/diagnosis/step1/";
+        try {
+            System.out.println("AI 서버로 진단 요청: " + aiServerUrl + endpoint);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            FirstStepRequest aiRequest = new FirstStepRequest(imageUrl);
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(aiRequest), headers);
+            
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    aiServerUrl + endpoint, entity, String.class);
+            
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.path("data");
+            return new FirstStepResponse(
+                    data.path("is_normal").asBoolean(),
+                    data.path("confidence").asDouble()
+            );
+        } catch (Exception e) {
+            throw new DiagnosisException();
+        }
+    }
+}
