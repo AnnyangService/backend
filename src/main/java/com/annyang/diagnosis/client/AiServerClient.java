@@ -63,7 +63,9 @@ public class AiServerClient {
             
             return true;
         } catch (Exception e) {
-            throw new DiagnosisException();
+            // TODO AI 서버 구현 완료 후 제거
+            return true;
+            // throw new DiagnosisException();
         }
     }
 }

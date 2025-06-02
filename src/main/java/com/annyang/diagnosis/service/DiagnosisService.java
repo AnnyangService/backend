@@ -49,7 +49,11 @@ public class DiagnosisService {
         Diagnosis diagnosis = diagnosisRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + id));
         String imageUrl = diagnosis.getImageUrl();
-        String password = UUID.randomUUID().toString();
+
+        // TODO AI 서버 구현 완료 후 주석 제거
+        // String password = UUID.randomUUID().toString();
+        String password = "password"; // 테스트용 비밀번호, 실제로는 UUID로 생성해야 함
+    
         diagnosis.setPassword(hashPassword(password));
         diagnosisRepository.save(diagnosis);
         return aiServerClient.requestSecondDiagnosis(id, password, imageUrl);
