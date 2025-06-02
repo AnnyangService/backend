@@ -47,4 +47,23 @@ public class AiServerClient {
             throw new DiagnosisException();
         }
     }
+
+    public boolean requestSecondDiagnosis(String diagnosisId, String password, String imageUrl) {
+        String endpoint = "/diagnosis/step2/";
+        try {
+            System.out.println("AI 서버로 2단계 진단 요청: " + aiServerUrl + endpoint);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            SecondStepRequest request = new SecondStepRequest(diagnosisId, password, imageUrl);
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
+
+            restTemplate.postForEntity(
+                aiServerUrl + endpoint, entity, String.class);
+            
+            return true;
+        } catch (Exception e) {
+            throw new DiagnosisException();
+        }
+    }
 }
