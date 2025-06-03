@@ -40,6 +40,7 @@ public class Cat extends BaseEntity {
 
     public Cat(String name, String image, LocalDate birthDate, String breed, 
               Gender gender, Double weight, LocalDate lastDiagnosis, String specialNotes, Member member) {
+        super();
         this.name = name;
         this.image = image;
         this.birthDate = birthDate;

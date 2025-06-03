@@ -37,14 +37,23 @@ public class Member extends BaseEntity implements UserDetails {
     private Role role;
 
     public Member(String email, String password, String name) {
+        super();
         this.email = email;
         this.password = password;
         this.name = name;
         this.role = Role.USER;
     }
 
-    public void setId(String id) {
-        super.setId(id);
+    public void update(String email, String password, String name) {
+        if (email != null && !email.isBlank()) {
+            this.email = email;
+        }
+        if (password != null && !password.isBlank()) {
+            this.password = password;
+        }
+        if (name != null && !name.isBlank()) {
+            this.name = name;
+        }
     }
 
     @Override
