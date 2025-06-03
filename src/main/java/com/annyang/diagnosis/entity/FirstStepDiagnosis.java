@@ -1,5 +1,7 @@
 package com.annyang.diagnosis.entity;
 
+import com.annyang.global.entity.BaseEntity;
+
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -10,11 +12,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "first_step_diagnosis")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class FirstStepDiagnosis {
-
-    @Id
-    @Column(length = 30)
-    private String id;
+public class FirstStepDiagnosis extends BaseEntity {
 
     @OneToOne(mappedBy = "firstStepDiagnosis", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @PrimaryKeyJoinColumn
@@ -30,8 +28,8 @@ public class FirstStepDiagnosis {
     private double confidence;
 
     @Builder
-    public FirstStepDiagnosis(String id, String imageUrl, boolean isNormal, double confidence) {
-        this.id = id;
+    public FirstStepDiagnosis(String imageUrl, boolean isNormal, double confidence) {
+        super();
         this.imageUrl = imageUrl;
         this.isNormal = isNormal;
         this.confidence = confidence;
