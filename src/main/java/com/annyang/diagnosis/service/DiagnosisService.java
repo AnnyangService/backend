@@ -1,78 +1,89 @@
 package com.annyang.diagnosis.service;
 
-import com.annyang.diagnosis.dto.DiagnosisRequest;
-import com.annyang.diagnosis.dto.DiagnosisResponse;
-import com.annyang.diagnosis.exception.DiagnosisException;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.annyang.diagnosis.client.AiServerClient;
+import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
+import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.entity.FirstStepDiagnosis;
+import com.annyang.diagnosis.entity.SecondStepDiagnosis;
+import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
+import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DiagnosisService {
-    
-    private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
-    
-    @Value("${ai.server.url}")
-    private String aiServerUrl;
-    
-    public DiagnosisResponse diagnoseFirstStep(DiagnosisRequest request) {
-        try {
-            System.out.println("AI 서버로 진단 요청: " + aiServerUrl + "/diagnosis/step1/");
-            // AI 서버로 요청 준비
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            
-            // request의 imageUrl을 image_url로 변환
-            AIDiagnosisRequest aiRequest = new AIDiagnosisRequest();
-            aiRequest.setImage_url(request.getImageUrl());
-            
-            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(aiRequest), headers);
-            
-            // AI 서버로 요청 전송
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    aiServerUrl + "/diagnosis/step1/", entity, String.class);
-            
-            // 응답 처리
-            JsonNode root = objectMapper.readTree(response.getBody());
-            JsonNode data = root.path("data");
 
-            return DiagnosisResponse.builder()
-                    .id(UUID.randomUUID().toString().replace("-", "").substring(0, 30))
-                    .normal(data.path("is_normal").asBoolean())
-                    .confidence(data.path("confidence").asDouble())
-                    .build();
-            
-        } catch (Exception e) {
-            // 비즈니스 예외로 처리하여 일관된 에러 응답 제공
-            throw new DiagnosisException();
-        }
+    private final AiServerClient aiServerClient;
+    private final FirstStepDiagnosisRepository firstStepDiagnosisRepository;
+    private final SecondStepDiagnosisRepository secondStepDiagnosisRepository;
+
+    @Transactional
+    public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
+        PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
+
+        String id = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+
+        FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
+                .id(id)
+                .imageUrl(request.getImageUrl())
+                .isNormal(response.isNormal())
+                .confidence(response.getConfidence())
+                .build();
+        firstStepDiagnosisRepository.save(firstStepDiagnosis);
+
+        return PostFirstStepDiagnosisResponse.builder()
+                .id(id)
+                .normal(response.isNormal())
+                .confidence(response.getConfidence())
+                .build();
     }
-    
-    @Getter
-    @NoArgsConstructor
-    static class AIDiagnosisRequest {
-        @JsonProperty("image_url")
-        private String image_url;
+
+    @Transactional
+    public boolean requestSecondStepDiagnosis(String id) {
+        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + id));
+        String imageUrl = firstStepDiagnosis.getImageUrl();
+
+        // TODO AI 서버 구현 완료 후 주석 제거
+        // String password = UUID.randomUUID().toString();
+        String password = "password"; // 테스트용 비밀번호, 실제로는 UUID로 생성해야 함
+        SecondStepDiagnosis secondStepDiagnosis = SecondStepDiagnosis.builder()
+                .id(id)
+                .password(password)
+                .build();
+        secondStepDiagnosisRepository.save(secondStepDiagnosis);
+
+        return aiServerClient.requestSecondDiagnosis(id, password, imageUrl);
+    }
+
+    @Transactional
+    public boolean updateSecondDiagnosis(UpdateSecondStepDiagnosisRequest request) {
+        SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(request.getId())
+                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + request.getId()));
+        secondDiagnosis.updateDiagnosis(request.getPassword(), request.getCategory(), request.getConfidence());
+        secondStepDiagnosisRepository.save(secondDiagnosis);
+        return true;
+    }
+
+    @Transactional(readOnly = true)
+    public GetSecondStepDiagnosisResponse getSecondDiagnosis(String id) {
+        SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + id));
+
+        if(secondDiagnosis.getCategory() == null) return null;
         
-        public void setImage_url(String image_url) {
-            this.image_url = image_url;
-        }
+        return GetSecondStepDiagnosisResponse.builder()
+                .id(id)
+                .category(secondDiagnosis.getCategory())
+                .confidence(secondDiagnosis.getConfidence())
+                .build();
     }
 }

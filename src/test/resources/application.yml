@@ -33,3 +33,7 @@ cloud:
     credentials:
       access-key: test
       secret-key: test
+
+ai:
+  server:
+    url: http://localhost:8081
