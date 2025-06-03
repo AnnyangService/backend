@@ -2,8 +2,8 @@ package com.annyang.diagnosis.controller;
 
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.CreateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
-import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.service.DiagnosisService;
 import com.annyang.global.response.ApiResponse;
 
@@ -13,7 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,10 +38,10 @@ public class DiagnosisController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     
-    @PutMapping("/step2")
-    public ResponseEntity<ApiResponse<Boolean>> updateDiagnosisSecondStep(
-            @Valid @RequestBody UpdateSecondStepDiagnosisRequest request) {
-        boolean isUpdated = diagnosisService.updateSecondDiagnosis(request);
-        return ResponseEntity.ok(ApiResponse.success(isUpdated));
+    @PostMapping("/step2")
+    public ResponseEntity<ApiResponse<Boolean>> createSecondStepDiagnosis(
+            @Valid @RequestBody CreateSecondStepDiagnosisRequest request) {
+        diagnosisService.createSecondStepDiagnosis(request);
+        return ResponseEntity.ok(ApiResponse.success(true));
     }
 }

@@ -1,8 +1,8 @@
 package com.annyang.diagnosis.controller;
 
 import com.annyang.Main;
+import com.annyang.diagnosis.dto.api.CreateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
-import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +27,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -184,7 +183,7 @@ public class DiagnosisControllerTest {
                 .path("data").path("id").asText();
 
         // When
-        UpdateSecondStepDiagnosisRequest updateSecondDiagnosisRequest = UpdateSecondStepDiagnosisRequest.builder()
+        CreateSecondStepDiagnosisRequest createSecondStepDiagnosisRequest = CreateSecondStepDiagnosisRequest.builder()
             .id(diagnosisId)
             .category("testCategory")
             .confidence(0.95)
@@ -192,9 +191,9 @@ public class DiagnosisControllerTest {
             .build();
 
         // Then
-        mockMvc.perform(put("/diagnosis/step2")
+        mockMvc.perform(post("/diagnosis/step2")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(updateSecondDiagnosisRequest)))
+            .content(objectMapper.writeValueAsString(createSecondStepDiagnosisRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data").value(true)); // 성공 시 데이터는 비어있음
@@ -204,8 +203,8 @@ public class DiagnosisControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.category").value(updateSecondDiagnosisRequest.getCategory()))
-            .andExpect(jsonPath("$.data.confidence").value(updateSecondDiagnosisRequest.getConfidence()))
+            .andExpect(jsonPath("$.data.category").value(createSecondStepDiagnosisRequest.getCategory()))
+            .andExpect(jsonPath("$.data.confidence").value(createSecondStepDiagnosisRequest.getConfidence()))
             .andExpect(jsonPath("$.data.id").value(diagnosisId));
     }
     
@@ -225,7 +224,7 @@ public class DiagnosisControllerTest {
                 .path("data").path("id").asText();
 
         // When
-        UpdateSecondStepDiagnosisRequest updateSecondDiagnosisRequest = UpdateSecondStepDiagnosisRequest.builder()
+        CreateSecondStepDiagnosisRequest updateSecondDiagnosisRequest = CreateSecondStepDiagnosisRequest.builder()
             .id(diagnosisId)
             .category("testCategory")
             .confidence(0.95)
@@ -233,7 +232,7 @@ public class DiagnosisControllerTest {
             .build();
         
         // Then
-        mockMvc.perform(put("/diagnosis/step2")
+        mockMvc.perform(post("/diagnosis/step2")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(updateSecondDiagnosisRequest)))
             .andExpect(status().isUnauthorized())

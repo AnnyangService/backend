@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class UpdateSecondStepDiagnosisRequest {
+public class CreateSecondStepDiagnosisRequest {
     private String id;
     private String password;
     private String category;

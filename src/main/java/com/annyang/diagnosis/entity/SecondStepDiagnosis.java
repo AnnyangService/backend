@@ -2,7 +2,6 @@ package com.annyang.diagnosis.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -37,38 +36,23 @@ public class SecondStepDiagnosis {
     @JoinColumn(name = "id")
     private FirstStepDiagnosis firstStepDiagnosis;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String category;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private double confidence;
 
-    @Column(nullable = false)
-    private String password;
-
-    public SecondStepDiagnosis(FirstStepDiagnosis firstStepDiagnosis, String password) {
+    public SecondStepDiagnosis(
+        FirstStepDiagnosis firstStepDiagnosis,
+        String password,
+        String category,
+        double confidence
+    ) {
         this.firstStepDiagnosis = firstStepDiagnosis;
-        this.password = hashPassword(password);
-    }
-
-    public void updateDiagnosis(String password, String category, double confidence) {
-        if (!verifyPassword(password)) {
+        if( !firstStepDiagnosis.verifyPassword(password) ) {
             throw new UnauthorizedException();
         }
         this.category = category;
         this.confidence = confidence;
-    }
-
-    public void setPassword(String password) {
-        this.password = hashPassword(password);
-    }
-
-    private String hashPassword(String password) {
-        return java.util.Base64.getEncoder().encodeToString(password.getBytes());
-    }
-
-    private boolean verifyPassword(String password) {
-        String hashedPassword = hashPassword(password);
-        return hashedPassword.equals(this.password);
     }
 }

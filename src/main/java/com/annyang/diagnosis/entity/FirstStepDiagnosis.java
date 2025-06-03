@@ -27,11 +27,25 @@ public class FirstStepDiagnosis extends BaseEntity {
     @Column(nullable = false)
     private double confidence;
 
+    @Column(nullable = false)
+    private String passwordForSecondStep;
+
     @Builder
-    public FirstStepDiagnosis(String imageUrl, boolean isNormal, double confidence) {
+    public FirstStepDiagnosis(String imageUrl, boolean isNormal, double confidence, String passwordForSecondStep) {
         super();
         this.imageUrl = imageUrl;
         this.isNormal = isNormal;
         this.confidence = confidence;
+        this.passwordForSecondStep = hashPassword(passwordForSecondStep);
+    }
+
+    private String hashPassword(String password) {
+        // TODO bcrpyt로 변경
+        return java.util.Base64.getEncoder().encodeToString(password.getBytes());
+    }
+
+    public boolean verifyPassword(String password) {
+        String hashedPassword = hashPassword(password);
+        return hashedPassword.equals(this.passwordForSecondStep);
     }
 }

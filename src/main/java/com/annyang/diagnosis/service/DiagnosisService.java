@@ -4,13 +4,15 @@ import com.annyang.diagnosis.client.AiServerClient;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
+import com.annyang.diagnosis.dto.api.CreateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
-import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
+import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,26 +21,29 @@ import org.springframework.transaction.annotation.Transactional;
 public class DiagnosisService {
 
     private final AiServerClient aiServerClient;
+    private final FirstStepDiagnosisRepository firstStepDiagnosisRepository;
     private final SecondStepDiagnosisRepository secondStepDiagnosisRepository;
 
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
         PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
+        /**
+        TODO: AI 서버 구현 완료 후 비밀번호 생성 로직을 UUID로 변경
+        String passwordForSecondStep = UUID.randomUUID().toString();
+         */
+        String passwordForSecondStep = "password";
 
         FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
                 .imageUrl(request.getImageUrl())
                 .isNormal(response.isNormal())
                 .confidence(response.getConfidence())
+                .passwordForSecondStep(passwordForSecondStep)
                 .build();
+        firstStepDiagnosisRepository.save(firstStepDiagnosis);
 
-        String password = "password"; // 테스트용 비밀번호, 실제로는 UUID로 생성해야 함
-        SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(firstStepDiagnosis, password);
-
-        secondStepDiagnosisRepository.save(secondStepDiagnosis);
-        
         aiServerClient.requestSecondDiagnosis(
-                secondStepDiagnosis.getId(), 
-                password, 
+                firstStepDiagnosis.getId(), 
+                passwordForSecondStep, 
                 firstStepDiagnosis.getImageUrl());
 
         return PostFirstStepDiagnosisResponse.builder()
@@ -49,21 +54,23 @@ public class DiagnosisService {
     }
 
     @Transactional
-    public boolean updateSecondDiagnosis(UpdateSecondStepDiagnosisRequest request) {
-        SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(request.getId())
-                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + request.getId()));
-        secondDiagnosis.updateDiagnosis(request.getPassword(), request.getCategory(), request.getConfidence());
-        secondStepDiagnosisRepository.save(secondDiagnosis);
-        return true;
+    public void createSecondStepDiagnosis(CreateSecondStepDiagnosisRequest request) {
+        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(request.getId())
+                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + request.getId()));
+        SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(
+                firstStepDiagnosis,
+                request.getPassword(), 
+                request.getCategory(),
+                request.getConfidence());
+        secondStepDiagnosisRepository.save(secondStepDiagnosis);
     }
 
     @Transactional(readOnly = true)
     public GetSecondStepDiagnosisResponse getSecondDiagnosis(String id) {
         SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + id));
+                .orElse(null);
+        if (secondDiagnosis == null) return null;
 
-        if(secondDiagnosis.getCategory() == null) return null;
-        
         return GetSecondStepDiagnosisResponse.builder()
                 .id(id)
                 .category(secondDiagnosis.getCategory())
