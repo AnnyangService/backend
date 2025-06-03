@@ -4,17 +4,29 @@ import com.annyang.diagnosis.client.AiServerClient;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
+import com.annyang.diagnosis.dto.ai.PostThirdStepDiagnosisToAiResponse;
 import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.GetDiagnosisRuleResponse;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
+import com.annyang.diagnosis.entity.DiagnosisRule;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
+import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
+import com.annyang.diagnosis.repository.DiagnosisRuleRepository;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +35,8 @@ public class DiagnosisService {
     private final AiServerClient aiServerClient;
     private final FirstStepDiagnosisRepository firstStepDiagnosisRepository;
     private final SecondStepDiagnosisRepository secondStepDiagnosisRepository;
+    private final ThirdStepDiagnosisRepository thirdStepDiagnosisRepository;
+    private final DiagnosisRuleRepository diagnosisRuleRepository;
 
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
@@ -75,6 +89,41 @@ public class DiagnosisService {
                 .id(id)
                 .category(secondDiagnosis.getCategory())
                 .confidence(secondDiagnosis.getConfidence())
+                .build();
+    }
+
+    public GetDiagnosisRuleResponse getDiagnosisRules() {
+        // TDOO 로컬 테스트용으로 mocking 규칙 데이터베이스에서 삽입
+        diagnosisRuleRepository.saveAll(List.of(
+                new DiagnosisRule("분비물 특성(점액성, 화농성, 수양성)"),
+                new DiagnosisRule("증상 진행 속도"),
+                new DiagnosisRule("증상")
+        ));
+        System.out.println("Diagnosis rules initialized for local testing.");
+        List<DiagnosisRule> rules = diagnosisRuleRepository.findAll();
+        return GetDiagnosisRuleResponse.builder()
+                .rules(rules)
+                .build();
+    }
+
+    @Transactional
+    public PostThirdStepDiagnosisResponse createThirdStepDiagnosis(PostThirdStepDiagnosisRequest request) {
+        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(request.getDiagnosisId())
+                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + request.getDiagnosisId()));
+
+        PostThirdStepDiagnosisToAiResponse response = aiServerClient.requestThirdDiagnosis(request.getUserResponses());
+
+        ThirdStepDiagnosis thirdStepDiagnosis = ThirdStepDiagnosis.builder()
+                .firstStepDiagnosis(firstStepDiagnosis)
+                .category(response.getCategory())
+                .confidence(response.getConfidence())
+                .build();
+        thirdStepDiagnosisRepository.save(thirdStepDiagnosis);
+
+        return PostThirdStepDiagnosisResponse.builder()
+                .id(thirdStepDiagnosis.getId())
+                .category(thirdStepDiagnosis.getCategory())
+                .confidence(thirdStepDiagnosis.getConfidence())
                 .build();
     }
 }

@@ -3,6 +3,9 @@ package com.annyang.diagnosis.controller;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.GetDiagnosisRuleResponse;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
 import com.annyang.diagnosis.service.DiagnosisService;
 import com.annyang.global.response.ApiResponse;
@@ -43,5 +46,18 @@ public class DiagnosisController {
             @Valid @RequestBody PostSecondStepDiagnosisRequest request) {
         diagnosisService.createSecondStepDiagnosis(request);
         return ResponseEntity.ok(ApiResponse.success(true));
+    }
+
+    @GetMapping("/rules")
+    public ResponseEntity<ApiResponse<GetDiagnosisRuleResponse>> getDiagnosisRules() {
+        GetDiagnosisRuleResponse response = diagnosisService.getDiagnosisRules();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/step3")
+    public ResponseEntity<ApiResponse<PostThirdStepDiagnosisResponse>> postThirdStepDiagnosis(
+            @Valid @RequestBody PostThirdStepDiagnosisRequest request) {
+        PostThirdStepDiagnosisResponse response = diagnosisService.createThirdStepDiagnosis(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

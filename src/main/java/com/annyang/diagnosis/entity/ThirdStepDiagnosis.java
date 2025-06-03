@@ -29,8 +29,8 @@ public class ThirdStepDiagnosis extends BaseEntity {
     private double confidence;
 
     @Builder
-    public ThirdStepDiagnosis(String id, String category, double confidence) {
-        this.id = id;
+    public ThirdStepDiagnosis(FirstStepDiagnosis firstStepDiagnosis, String category, double confidence) {
+        this.firstStepDiagnosis = firstStepDiagnosis;
         this.category = category;
         this.confidence = confidence;
     }

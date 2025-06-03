@@ -2,9 +2,18 @@ package com.annyang.diagnosis.controller;
 
 import com.annyang.Main;
 import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisRequest;
+import com.annyang.diagnosis.entity.FirstStepDiagnosis;
+import com.annyang.diagnosis.entity.SecondStepDiagnosis;
+import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
+import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
+import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import jakarta.persistence.EntityManager;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +39,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+
 @SpringBootTest(classes = {Main.class})
 @AutoConfigureMockMvc
 @Transactional
@@ -52,6 +63,18 @@ public class DiagnosisControllerTest {
     private static final String USER_ID = "testUser";
 
     private static String password;
+
+    @Autowired
+    private FirstStepDiagnosisRepository firstStepDiagnosisRepository;
+
+    @Autowired
+    private SecondStepDiagnosisRepository secondStepDiagnosisRepository;
+
+    @Autowired
+    private ThirdStepDiagnosisRepository thirdStepDiagnosisRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @BeforeEach
     void setUp() {
@@ -101,6 +124,24 @@ public class DiagnosisControllerTest {
                         
                         return new ResponseEntity<>("{\"success\":true}", HttpStatus.OK);
                 });
+
+        // 세 번째 단계 진단 AI 서버의 응답을 모킹
+        String mockThirdStepResponse = "{"
+                + "\"success\": true,"
+                + "\"message\": \"Success\","
+                + "\"data\": {"
+                + "  \"category\": \"testCategory\","
+                + "  \"confidence\": 0.95"
+                + "}"
+                + "}";
+        ResponseEntity<String> mockThirdStepResponseEntity = 
+                new ResponseEntity<>(mockThirdStepResponse, HttpStatus.OK);
+        
+        when(restTemplate.postForEntity(
+                eq(aiServerUrl + "/diagnosis/step3/"),
+                any(),
+                eq(String.class)))
+                .thenReturn(mockThirdStepResponseEntity);
     }
 
     @Test
@@ -238,5 +279,50 @@ public class DiagnosisControllerTest {
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.success").value(false))
             .andExpect(jsonPath("$.error.code").value("A001")); // UNAUTHORIZED 에러 코드
+    }
+
+    @Test
+    @DisplayName("진단 규칙 조회 API 성공")
+    @WithMockUser(username = USER_ID)
+    void getDiagnosisRules_Success() throws Exception {
+        mockMvc.perform(get("/diagnosis/rules")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.rules").isArray())
+                .andExpect(jsonPath("$.data.rules[0].id").exists())
+                .andExpect(jsonPath("$.data.rules[0].name").exists());
+    }
+
+    @Test
+    @DisplayName("진단 3단계 생성 API 성공")
+    @WithMockUser(username = USER_ID)
+    void createThirdStepDiagnosis_Success() throws Exception {
+        // Given
+        FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
+                .imageUrl("https://s3.bucket/path/to/image.jpg")
+                .isNormal(true)
+                .confidence(0.9999570846557617)
+                .passwordForSecondStep("password")
+                .build();
+        SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(
+            firstStepDiagnosis, "password", "category", 0.5);
+        secondStepDiagnosisRepository.save(secondStepDiagnosis);
+        
+        // When & Then
+        PostThirdStepDiagnosisRequest request = new PostThirdStepDiagnosisRequest(
+                secondStepDiagnosis.getId(),
+                List.of(
+                        new PostThirdStepDiagnosisRequest.UserResponse("1", "점액성")
+                )
+        );
+        mockMvc.perform(post("/diagnosis/step3")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").exists())
+                .andExpect(jsonPath("$.data.category").exists())
+                .andExpect(jsonPath("$.data.confidence").exists());
     }
 }
