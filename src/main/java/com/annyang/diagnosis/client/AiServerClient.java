@@ -65,9 +65,11 @@ public class AiServerClient {
             
             return true;
         } catch (Exception e) {
-            // TODO AI 서버 구현 완료 후 제거
+            /**
+            TODO AI 서버 구현 완료 후 mock 데이터 반환하는 대신 예외처리
+            throw new DiagnosisException();
+             */
             return true;
-            // throw new DiagnosisException();
         }
     }
 }
