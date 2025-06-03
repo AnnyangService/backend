@@ -1,5 +1,7 @@
 package com.annyang.diagnosis.entity;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+
 import com.annyang.global.entity.BaseEntity;
 
 import jakarta.persistence.*;
@@ -13,6 +15,8 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class FirstStepDiagnosis extends BaseEntity {
+
+    private static final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     @OneToOne(mappedBy = "firstStepDiagnosis", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @PrimaryKeyJoinColumn
@@ -40,12 +44,10 @@ public class FirstStepDiagnosis extends BaseEntity {
     }
 
     private String hashPassword(String password) {
-        // TODO bcrpyt로 변경
-        return java.util.Base64.getEncoder().encodeToString(password.getBytes());
+        return encoder.encode(password);
     }
 
     public boolean verifyPassword(String password) {
-        String hashedPassword = hashPassword(password);
-        return hashedPassword.equals(this.passwordForSecondStep);
+        return encoder.matches(password, this.passwordForSecondStep);
     }
 }
