@@ -1,14 +1,15 @@
 package com.annyang.diagnosis.service;
 
-import com.annyang.auth.exception.UnauthorizedException;
 import com.annyang.diagnosis.client.AiServerClient;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
-import com.annyang.diagnosis.entity.Diagnosis;
-import com.annyang.diagnosis.repository.DiagnosisRepository;
+import com.annyang.diagnosis.entity.FirstStepDiagnosis;
+import com.annyang.diagnosis.entity.SecondStepDiagnosis;
+import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
+import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,8 @@ import java.util.UUID;
 public class DiagnosisService {
 
     private final AiServerClient aiServerClient;
-    private final DiagnosisRepository diagnosisRepository;
+    private final FirstStepDiagnosisRepository firstStepDiagnosisRepository;
+    private final SecondStepDiagnosisRepository secondStepDiagnosisRepository;
 
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
@@ -29,13 +31,13 @@ public class DiagnosisService {
 
         String id = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
-        Diagnosis diagnosis = Diagnosis.builder()
+        FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
                 .id(id)
                 .imageUrl(request.getImageUrl())
-                .normal(response.isNormal())
-                .confidence(response.getConfidence()) // 2차 진단 신뢰도 초기화
+                .isNormal(response.isNormal())
+                .confidence(response.getConfidence())
                 .build();
-        diagnosisRepository.save(diagnosis);
+        firstStepDiagnosisRepository.save(firstStepDiagnosis);
 
         return PostFirstStepDiagnosisResponse.builder()
                 .id(id)
@@ -46,66 +48,42 @@ public class DiagnosisService {
 
     @Transactional
     public boolean requestSecondStepDiagnosis(String id) {
-        Diagnosis diagnosis = diagnosisRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + id));
-        String imageUrl = diagnosis.getImageUrl();
+        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + id));
+        String imageUrl = firstStepDiagnosis.getImageUrl();
 
         // TODO AI 서버 구현 완료 후 주석 제거
         // String password = UUID.randomUUID().toString();
         String password = "password"; // 테스트용 비밀번호, 실제로는 UUID로 생성해야 함
-    
-        diagnosis.setPassword(hashPassword(password));
-        diagnosisRepository.save(diagnosis);
+        SecondStepDiagnosis secondStepDiagnosis = SecondStepDiagnosis.builder()
+                .id(id)
+                .password(password)
+                .build();
+        secondStepDiagnosisRepository.save(secondStepDiagnosis);
+
         return aiServerClient.requestSecondDiagnosis(id, password, imageUrl);
     }
 
     @Transactional
     public boolean updateSecondDiagnosis(UpdateSecondStepDiagnosisRequest request) {
-        Diagnosis diagnosis = diagnosisRepository.findById(request.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + request.getId()));
-
-        if(!verifyPassword(diagnosis, request.getPassword())) {
-            throw new UnauthorizedException();
-        }
-
-        diagnosis.updateSecondDiagnosis(request.getCategory(), request.getConfidence());
-        diagnosisRepository.save(diagnosis);
+        SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(request.getId())
+                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + request.getId()));
+        secondDiagnosis.updateDiagnosis(request.getPassword(), request.getCategory(), request.getConfidence());
+        secondStepDiagnosisRepository.save(secondDiagnosis);
         return true;
     }
 
     @Transactional(readOnly = true)
     public GetSecondStepDiagnosisResponse getSecondDiagnosis(String id) {
-        Diagnosis diagnosis = diagnosisRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + id));
+        SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + id));
 
+        if(secondDiagnosis.getCategory() == null) return null;
+        
         return GetSecondStepDiagnosisResponse.builder()
                 .id(id)
-                .category(diagnosis.getCategory())
-                .confidence(diagnosis.getConfidenceOfSecond())
-                .build();
-    }
-
-    private String hashPassword(String password) {
-        return java.util.Base64.getEncoder().encodeToString(password.getBytes());
-    }
-
-    // DB에 해싱되어서 저장된 pasword 일치여부 검증
-    private boolean verifyPassword(Diagnosis diagnosis, String password) {
-        String storedHashedPassword = diagnosis.getPassword();
-        if (storedHashedPassword == null) { // 비밀번호가 설정되지 않은 경우
-            return false;
-        }
-        String hashedInputPassword = hashPassword(password); // 입력된 비밀번호 해싱
-        return storedHashedPassword.equals(hashedInputPassword);
-    }
-
-    public GetSecondStepDiagnosisResponse getSecondDiagnosisResponse(String id) {
-        Diagnosis diagnosis = diagnosisRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + id));
-        return GetSecondStepDiagnosisResponse.builder()
-                .id(id)
-                .category(diagnosis.getCategory())
-                .confidence(diagnosis.getConfidenceOfSecond())
+                .category(secondDiagnosis.getCategory())
+                .confidence(secondDiagnosis.getConfidence())
                 .build();
     }
 }

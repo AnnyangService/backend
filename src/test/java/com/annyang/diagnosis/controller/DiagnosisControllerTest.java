@@ -164,8 +164,7 @@ public class DiagnosisControllerTest {
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.category").isEmpty())
-                .andExpect(jsonPath("$.data.id").value(diagnosisId))
+                .andExpect(jsonPath("$.data").isEmpty())
                 .andReturn();
     }
     
