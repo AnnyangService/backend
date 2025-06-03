@@ -4,7 +4,7 @@ import com.annyang.diagnosis.client.AiServerClient;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
-import com.annyang.diagnosis.dto.api.CreateSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
@@ -54,7 +54,7 @@ public class DiagnosisService {
     }
 
     @Transactional
-    public void createSecondStepDiagnosis(CreateSecondStepDiagnosisRequest request) {
+    public void createSecondStepDiagnosis(PostSecondStepDiagnosisRequest request) {
         FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(request.getId())
                 .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + request.getId()));
         SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(

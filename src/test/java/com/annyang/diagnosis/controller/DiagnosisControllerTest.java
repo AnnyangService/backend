@@ -1,7 +1,7 @@
 package com.annyang.diagnosis.controller;
 
 import com.annyang.Main;
-import com.annyang.diagnosis.dto.api.CreateSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -183,7 +183,7 @@ public class DiagnosisControllerTest {
                 .path("data").path("id").asText();
 
         // When
-        CreateSecondStepDiagnosisRequest createSecondStepDiagnosisRequest = CreateSecondStepDiagnosisRequest.builder()
+        PostSecondStepDiagnosisRequest createSecondStepDiagnosisRequest = PostSecondStepDiagnosisRequest.builder()
             .id(diagnosisId)
             .category("testCategory")
             .confidence(0.95)
@@ -224,7 +224,7 @@ public class DiagnosisControllerTest {
                 .path("data").path("id").asText();
 
         // When
-        CreateSecondStepDiagnosisRequest updateSecondDiagnosisRequest = CreateSecondStepDiagnosisRequest.builder()
+        PostSecondStepDiagnosisRequest updateSecondDiagnosisRequest = PostSecondStepDiagnosisRequest.builder()
             .id(diagnosisId)
             .category("testCategory")
             .confidence(0.95)

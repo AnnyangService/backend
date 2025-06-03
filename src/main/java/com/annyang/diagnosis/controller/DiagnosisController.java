@@ -2,7 +2,7 @@ package com.annyang.diagnosis.controller;
 
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
-import com.annyang.diagnosis.dto.api.CreateSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
 import com.annyang.diagnosis.service.DiagnosisService;
 import com.annyang.global.response.ApiResponse;
@@ -40,7 +40,7 @@ public class DiagnosisController {
     
     @PostMapping("/step2")
     public ResponseEntity<ApiResponse<Boolean>> createSecondStepDiagnosis(
-            @Valid @RequestBody CreateSecondStepDiagnosisRequest request) {
+            @Valid @RequestBody PostSecondStepDiagnosisRequest request) {
         diagnosisService.createSecondStepDiagnosis(request);
         return ResponseEntity.ok(ApiResponse.success(true));
     }
