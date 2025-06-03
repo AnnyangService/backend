@@ -5,31 +5,18 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
 import com.annyang.auth.exception.UnauthorizedException;
+import com.annyang.global.entity.BaseEntity;
 
 @Entity
 @Table(name = "second_step_diagnosis")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@EntityListeners(AuditingEntityListener.class)
-public class SecondStepDiagnosis {
+public class SecondStepDiagnosis extends BaseEntity {
 
+    // @MapId 어느테이션을 사용하려면 현재 클래스에서 @Id로 지정된 필드가 있어야해서 BaseEntity에서 @Id로 지정된 필드를 재정의함
     @Id
-    @Column(name = "id", length = 30)
     private String id; // PK이자 FK
-
-    @CreatedDate
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-
-    @LastModifiedDate
-    private LocalDateTime updatedAt;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
