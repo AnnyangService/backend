@@ -29,7 +29,6 @@ public class DiagnosisController {
     public ResponseEntity<ApiResponse<PostFirstStepDiagnosisResponse>> diagnosisFirstStep(
             @Valid @RequestBody PostFirstStepDiagnosisRequest request) {
         PostFirstStepDiagnosisResponse response = diagnosisService.diagnoseFirstStep(request);
-        diagnosisService.requestSecondStepDiagnosis(response.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

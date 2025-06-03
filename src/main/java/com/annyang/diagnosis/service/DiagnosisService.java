@@ -8,60 +8,44 @@ import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
-import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class DiagnosisService {
 
     private final AiServerClient aiServerClient;
-    private final FirstStepDiagnosisRepository firstStepDiagnosisRepository;
     private final SecondStepDiagnosisRepository secondStepDiagnosisRepository;
 
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
         PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
 
-        String id = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
-
         FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
-                .id(id)
                 .imageUrl(request.getImageUrl())
                 .isNormal(response.isNormal())
                 .confidence(response.getConfidence())
                 .build();
-        firstStepDiagnosisRepository.save(firstStepDiagnosis);
+
+        String password = "password"; // 테스트용 비밀번호, 실제로는 UUID로 생성해야 함
+        SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(firstStepDiagnosis, password);
+
+        secondStepDiagnosisRepository.save(secondStepDiagnosis);
+        
+        aiServerClient.requestSecondDiagnosis(
+                secondStepDiagnosis.getId(), 
+                password, 
+                firstStepDiagnosis.getImageUrl());
 
         return PostFirstStepDiagnosisResponse.builder()
-                .id(id)
-                .normal(response.isNormal())
-                .confidence(response.getConfidence())
+                .id(firstStepDiagnosis.getId())
+                .normal(firstStepDiagnosis.isNormal())
+                .confidence(firstStepDiagnosis.getConfidence())
                 .build();
-    }
-
-    @Transactional
-    public boolean requestSecondStepDiagnosis(String id) {
-        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + id));
-        String imageUrl = firstStepDiagnosis.getImageUrl();
-
-        // TODO AI 서버 구현 완료 후 주석 제거
-        // String password = UUID.randomUUID().toString();
-        String password = "password"; // 테스트용 비밀번호, 실제로는 UUID로 생성해야 함
-        SecondStepDiagnosis secondStepDiagnosis = SecondStepDiagnosis.builder()
-                .id(id)
-                .password(password)
-                .build();
-        secondStepDiagnosisRepository.save(secondStepDiagnosis);
-
-        return aiServerClient.requestSecondDiagnosis(id, password, imageUrl);
     }
 
     @Transactional
