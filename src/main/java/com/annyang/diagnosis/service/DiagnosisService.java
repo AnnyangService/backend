@@ -2,11 +2,11 @@ package com.annyang.diagnosis.service;
 
 import com.annyang.auth.exception.UnauthorizedException;
 import com.annyang.diagnosis.client.AiServerClient;
-import com.annyang.diagnosis.client.DiagnosisDto.FirstStepResponse;
-import com.annyang.diagnosis.dto.UpdateSecondDiagnosisRequest;
-import com.annyang.diagnosis.dto.DiagnosisRequest;
-import com.annyang.diagnosis.dto.DiagnosisResponse;
-import com.annyang.diagnosis.dto.SecondDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
+import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.entity.Diagnosis;
 import com.annyang.diagnosis.repository.DiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,8 +24,8 @@ public class DiagnosisService {
     private final DiagnosisRepository diagnosisRepository;
 
     @Transactional
-    public DiagnosisResponse diagnoseFirstStep(DiagnosisRequest request) {
-        FirstStepResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
+    public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
+        PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
 
         String id = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
@@ -37,7 +37,7 @@ public class DiagnosisService {
                 .build();
         diagnosisRepository.save(diagnosis);
 
-        return DiagnosisResponse.builder()
+        return PostFirstStepDiagnosisResponse.builder()
                 .id(id)
                 .normal(response.isNormal())
                 .confidence(response.getConfidence())
@@ -60,7 +60,7 @@ public class DiagnosisService {
     }
 
     @Transactional
-    public boolean updateSecondDiagnosis(UpdateSecondDiagnosisRequest request) {
+    public boolean updateSecondDiagnosis(UpdateSecondStepDiagnosisRequest request) {
         Diagnosis diagnosis = diagnosisRepository.findById(request.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + request.getId()));
 
@@ -74,11 +74,11 @@ public class DiagnosisService {
     }
 
     @Transactional(readOnly = true)
-    public SecondDiagnosisResponse getSecondDiagnosis(String id) {
+    public GetSecondStepDiagnosisResponse getSecondDiagnosis(String id) {
         Diagnosis diagnosis = diagnosisRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + id));
 
-        return SecondDiagnosisResponse.builder()
+        return GetSecondStepDiagnosisResponse.builder()
                 .id(id)
                 .category(diagnosis.getCategory())
                 .confidence(diagnosis.getConfidenceOfSecond())
@@ -99,10 +99,10 @@ public class DiagnosisService {
         return storedHashedPassword.equals(hashedInputPassword);
     }
 
-    public SecondDiagnosisResponse getSecondDiagnosisResponse(String id) {
+    public GetSecondStepDiagnosisResponse getSecondDiagnosisResponse(String id) {
         Diagnosis diagnosis = diagnosisRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Diagnosis not found with id: " + id));
-        return SecondDiagnosisResponse.builder()
+        return GetSecondStepDiagnosisResponse.builder()
                 .id(id)
                 .category(diagnosis.getCategory())
                 .confidence(diagnosis.getConfidenceOfSecond())

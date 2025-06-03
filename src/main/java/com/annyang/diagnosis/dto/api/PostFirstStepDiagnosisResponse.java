@@ -1,4 +1,4 @@
-package com.annyang.diagnosis.dto;
+package com.annyang.diagnosis.dto.api;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class DiagnosisResponse {
+public class PostFirstStepDiagnosisResponse {
     
     private String id;
     @JsonProperty("is_normal")

@@ -1,9 +1,9 @@
 package com.annyang.diagnosis.controller;
 
-import com.annyang.diagnosis.dto.UpdateSecondDiagnosisRequest;
-import com.annyang.diagnosis.dto.DiagnosisRequest;
-import com.annyang.diagnosis.dto.DiagnosisResponse;
-import com.annyang.diagnosis.dto.SecondDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.service.DiagnosisService;
 import com.annyang.global.response.ApiResponse;
 
@@ -26,23 +26,23 @@ public class DiagnosisController {
     private final DiagnosisService diagnosisService;
     
     @PostMapping("/step1")
-    public ResponseEntity<ApiResponse<DiagnosisResponse>> diagnosisFirstStep(
-            @Valid @RequestBody DiagnosisRequest request) {
-        DiagnosisResponse response = diagnosisService.diagnoseFirstStep(request);
+    public ResponseEntity<ApiResponse<PostFirstStepDiagnosisResponse>> diagnosisFirstStep(
+            @Valid @RequestBody PostFirstStepDiagnosisRequest request) {
+        PostFirstStepDiagnosisResponse response = diagnosisService.diagnoseFirstStep(request);
         diagnosisService.requestSecondStepDiagnosis(response.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/step2/{id}")
-    public ResponseEntity<ApiResponse<SecondDiagnosisResponse>> getDiagnosisSecondStep(
+    public ResponseEntity<ApiResponse<GetSecondStepDiagnosisResponse>> getDiagnosisSecondStep(
             @PathVariable String id) {
-        SecondDiagnosisResponse response = diagnosisService.getSecondDiagnosis(id);
+        GetSecondStepDiagnosisResponse response = diagnosisService.getSecondDiagnosis(id);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     
     @PutMapping("/step2")
     public ResponseEntity<ApiResponse<Boolean>> updateDiagnosisSecondStep(
-            @Valid @RequestBody UpdateSecondDiagnosisRequest request) {
+            @Valid @RequestBody UpdateSecondStepDiagnosisRequest request) {
         boolean isUpdated = diagnosisService.updateSecondDiagnosis(request);
         return ResponseEntity.ok(ApiResponse.success(isUpdated));
     }

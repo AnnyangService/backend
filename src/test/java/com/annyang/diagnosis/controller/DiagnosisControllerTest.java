@@ -1,8 +1,8 @@
 package com.annyang.diagnosis.controller;
 
 import com.annyang.Main;
-import com.annyang.diagnosis.dto.DiagnosisRequest;
-import com.annyang.diagnosis.dto.UpdateSecondDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,6 @@ import org.springframework.web.client.RestTemplate;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -46,7 +45,7 @@ public class DiagnosisControllerTest {
     @MockBean
     private RestTemplate restTemplate;
 
-    private DiagnosisRequest diagnosisRequest;
+    private PostFirstStepDiagnosisRequest diagnosisRequest;
 
     @Value("${ai.server.url}")
     private String aiServerUrl;
@@ -58,7 +57,7 @@ public class DiagnosisControllerTest {
     @BeforeEach
     void setUp() {
         // 진단 요청 객체 생성
-        diagnosisRequest = new DiagnosisRequest();
+        diagnosisRequest = new PostFirstStepDiagnosisRequest();
         diagnosisRequest.setImageUrl("https://s3.bucket/path/to/image.jpg");
         
         // 첫 번째 단계 진단 AI 서버의 응답을 모킹
@@ -186,7 +185,7 @@ public class DiagnosisControllerTest {
                 .path("data").path("id").asText();
 
         // When
-        UpdateSecondDiagnosisRequest updateSecondDiagnosisRequest = UpdateSecondDiagnosisRequest.builder()
+        UpdateSecondStepDiagnosisRequest updateSecondDiagnosisRequest = UpdateSecondStepDiagnosisRequest.builder()
             .id(diagnosisId)
             .category("testCategory")
             .confidence(0.95)
@@ -227,7 +226,7 @@ public class DiagnosisControllerTest {
                 .path("data").path("id").asText();
 
         // When
-        UpdateSecondDiagnosisRequest updateSecondDiagnosisRequest = UpdateSecondDiagnosisRequest.builder()
+        UpdateSecondStepDiagnosisRequest updateSecondDiagnosisRequest = UpdateSecondStepDiagnosisRequest.builder()
             .id(diagnosisId)
             .category("testCategory")
             .confidence(0.95)

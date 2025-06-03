@@ -1,13 +1,12 @@
-package com.annyang.diagnosis.dto;
+package com.annyang.diagnosis.dto.api;
 
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-public class UpdateSecondDiagnosisRequest {
+public class GetSecondStepDiagnosisResponse {
     private String id;
-    private String password;
     private String category;
     private double confidence;
 }
