@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,7 @@ class CatControllerTest {
     private Member testMember;
     private CatRegisterRequest catRegisterRequest;
 
-    private final String USER_ID = "01HXSAXEAASYJY0VZ7J2VPHCX8";
+    private static final String USER_ID = "01HXSAXEAASYJY0VZ7J2VPHCX8";
 
     @BeforeEach
     void setUp() {
@@ -59,7 +60,7 @@ class CatControllerTest {
             passwordEncoder.encode("password123"),
             "Test User"
         );
-        testMember.setId(USER_ID);
+        ReflectionTestUtils.setField(testMember, "id", USER_ID);
         memberRepository.save(testMember);
 
         // 테스트용 고양이 등록 요청 데이터 생성

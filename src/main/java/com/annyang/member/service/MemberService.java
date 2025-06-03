@@ -58,14 +58,8 @@ public class MemberService {
             throw new EmailDuplicateException();
         }
 
-        Member updatedMember = new Member(
-                request.email(),
-                passwordEncoder.encode(request.password()),
-                request.name()
-        );
-        updatedMember.setId(id);
-
-        return MemberResponse.from(memberRepository.save(updatedMember));
+        member.update(request.email(), request.password(), request.name());
+        return MemberResponse.from(memberRepository.save(member));
     }
 
     public void deleteMember(String id) {

@@ -2,20 +2,20 @@ package com.annyang.diagnosis.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import com.annyang.auth.exception.UnauthorizedException;
+import com.annyang.global.entity.BaseEntity;
 
 @Entity
 @Table(name = "second_step_diagnosis")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SecondStepDiagnosis {
+public class SecondStepDiagnosis extends BaseEntity {
 
+    // @MapId 어느테이션을 사용하려면 현재 클래스에서 @Id로 지정된 필드가 있어야해서 BaseEntity에서 @Id로 지정된 필드를 재정의함
     @Id
-    @Column(name = "id", length = 30)
     private String id; // PK이자 FK
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -23,39 +23,23 @@ public class SecondStepDiagnosis {
     @JoinColumn(name = "id")
     private FirstStepDiagnosis firstStepDiagnosis;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String category;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private double confidence;
 
-    @Column(nullable = false)
-    private String password;
-
-    @Builder
-    public SecondStepDiagnosis(String id, String password) {
-        this.id = id;
-        this.password = hashPassword(password);
-    }
-
-    public void updateDiagnosis(String password, String category, double confidence) {
-        if (!verifyPassword(password)) {
+    public SecondStepDiagnosis(
+        FirstStepDiagnosis firstStepDiagnosis,
+        String password,
+        String category,
+        double confidence
+    ) {
+        this.firstStepDiagnosis = firstStepDiagnosis;
+        if( !firstStepDiagnosis.verifyPassword(password) ) {
             throw new UnauthorizedException();
         }
         this.category = category;
         this.confidence = confidence;
-    }
-
-    public void setPassword(String password) {
-        this.password = hashPassword(password);
-    }
-
-    private String hashPassword(String password) {
-        return java.util.Base64.getEncoder().encodeToString(password.getBytes());
-    }
-
-    private boolean verifyPassword(String password) {
-        String hashedPassword = hashPassword(password);
-        return hashedPassword.equals(this.password);
     }
 }

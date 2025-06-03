@@ -24,14 +24,7 @@ public abstract class BaseEntity {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    public void generateId() {
-        if (id == null) {
-            id = UlidCreator.getUlid().toString();
-        }
-    }
-
-    protected void setId(String id) {
-        this.id = id;
+    public BaseEntity() {
+        id = UlidCreator.getUlid().toString();
     }
 } 

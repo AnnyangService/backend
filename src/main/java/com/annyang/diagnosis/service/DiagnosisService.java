@@ -4,18 +4,29 @@ import com.annyang.diagnosis.client.AiServerClient;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
+import com.annyang.diagnosis.dto.ai.PostThirdStepDiagnosisToAiResponse;
+import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.api.GetDiagnosisRuleResponse;
 import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
-import com.annyang.diagnosis.dto.api.UpdateSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.entity.DiagnosisRule;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
+import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
+import com.annyang.diagnosis.repository.DiagnosisRuleRepository;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.UUID;
+import org.springframework.validation.annotation.Validated;
+import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -24,66 +35,95 @@ public class DiagnosisService {
     private final AiServerClient aiServerClient;
     private final FirstStepDiagnosisRepository firstStepDiagnosisRepository;
     private final SecondStepDiagnosisRepository secondStepDiagnosisRepository;
+    private final ThirdStepDiagnosisRepository thirdStepDiagnosisRepository;
+    private final DiagnosisRuleRepository diagnosisRuleRepository;
 
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
         PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
-
-        String id = UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        /**
+        TODO: AI 서버 구현 완료 후 비밀번호 생성 로직을 UUID로 변경
+        String passwordForSecondStep = UUID.randomUUID().toString();
+         */
+        String passwordForSecondStep = "password";
 
         FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
-                .id(id)
                 .imageUrl(request.getImageUrl())
                 .isNormal(response.isNormal())
                 .confidence(response.getConfidence())
+                .passwordForSecondStep(passwordForSecondStep)
                 .build();
         firstStepDiagnosisRepository.save(firstStepDiagnosis);
 
+        aiServerClient.requestSecondDiagnosis(
+                firstStepDiagnosis.getId(), 
+                passwordForSecondStep, 
+                firstStepDiagnosis.getImageUrl());
+
         return PostFirstStepDiagnosisResponse.builder()
-                .id(id)
-                .normal(response.isNormal())
-                .confidence(response.getConfidence())
+                .id(firstStepDiagnosis.getId())
+                .normal(firstStepDiagnosis.isNormal())
+                .confidence(firstStepDiagnosis.getConfidence())
                 .build();
     }
 
     @Transactional
-    public boolean requestSecondStepDiagnosis(String id) {
-        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + id));
-        String imageUrl = firstStepDiagnosis.getImageUrl();
-
-        // TODO AI 서버 구현 완료 후 주석 제거
-        // String password = UUID.randomUUID().toString();
-        String password = "password"; // 테스트용 비밀번호, 실제로는 UUID로 생성해야 함
-        SecondStepDiagnosis secondStepDiagnosis = SecondStepDiagnosis.builder()
-                .id(id)
-                .password(password)
-                .build();
+    public void createSecondStepDiagnosis(PostSecondStepDiagnosisRequest request) {
+        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(request.getId())
+                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + request.getId()));
+        SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(
+                firstStepDiagnosis,
+                request.getPassword(), 
+                request.getCategory(),
+                request.getConfidence());
         secondStepDiagnosisRepository.save(secondStepDiagnosis);
-
-        return aiServerClient.requestSecondDiagnosis(id, password, imageUrl);
-    }
-
-    @Transactional
-    public boolean updateSecondDiagnosis(UpdateSecondStepDiagnosisRequest request) {
-        SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(request.getId())
-                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + request.getId()));
-        secondDiagnosis.updateDiagnosis(request.getPassword(), request.getCategory(), request.getConfidence());
-        secondStepDiagnosisRepository.save(secondDiagnosis);
-        return true;
     }
 
     @Transactional(readOnly = true)
     public GetSecondStepDiagnosisResponse getSecondDiagnosis(String id) {
         SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found with id: " + id));
+                .orElse(null);
+        if (secondDiagnosis == null) return null;
 
-        if(secondDiagnosis.getCategory() == null) return null;
-        
         return GetSecondStepDiagnosisResponse.builder()
                 .id(id)
                 .category(secondDiagnosis.getCategory())
                 .confidence(secondDiagnosis.getConfidence())
+                .build();
+    }
+
+    public GetDiagnosisRuleResponse getDiagnosisRules() {
+        // TDOO 로컬 테스트용으로 mocking 규칙 데이터베이스에서 삽입
+        diagnosisRuleRepository.saveAll(List.of(
+                new DiagnosisRule("분비물 특성(점액성, 화농성, 수양성)"),
+                new DiagnosisRule("증상 진행 속도"),
+                new DiagnosisRule("증상")
+        ));
+        System.out.println("Diagnosis rules initialized for local testing.");
+        List<DiagnosisRule> rules = diagnosisRuleRepository.findAll();
+        return GetDiagnosisRuleResponse.builder()
+                .rules(rules)
+                .build();
+    }
+
+    @Transactional
+    public PostThirdStepDiagnosisResponse createThirdStepDiagnosis(PostThirdStepDiagnosisRequest request) {
+        FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(request.getDiagnosisId())
+                .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + request.getDiagnosisId()));
+
+        PostThirdStepDiagnosisToAiResponse response = aiServerClient.requestThirdDiagnosis(request.getUserResponses());
+
+        ThirdStepDiagnosis thirdStepDiagnosis = ThirdStepDiagnosis.builder()
+                .firstStepDiagnosis(firstStepDiagnosis)
+                .category(response.getCategory())
+                .confidence(response.getConfidence())
+                .build();
+        thirdStepDiagnosisRepository.save(thirdStepDiagnosis);
+
+        return PostThirdStepDiagnosisResponse.builder()
+                .id(thirdStepDiagnosis.getId())
+                .category(thirdStepDiagnosis.getCategory())
+                .confidence(thirdStepDiagnosis.getConfidence())
                 .build();
     }
 }
