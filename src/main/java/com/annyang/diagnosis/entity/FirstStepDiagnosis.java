@@ -16,6 +16,10 @@ public class FirstStepDiagnosis {
     @Column(length = 30)
     private String id;
 
+    @OneToOne(mappedBy = "firstStepDiagnosis", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @PrimaryKeyJoinColumn
+    private SecondStepDiagnosis secondStepDiagnosis;
+
     @Column(nullable = false)
     private String imageUrl;
 
@@ -24,9 +28,6 @@ public class FirstStepDiagnosis {
 
     @Column(nullable = false)
     private double confidence;
-
-    @OneToOne(mappedBy = "firstStepDiagnosis", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private SecondStepDiagnosis secondStepDiagnosis;
 
     @Builder
     public FirstStepDiagnosis(String id, String imageUrl, boolean isNormal, double confidence) {

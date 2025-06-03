@@ -19,7 +19,8 @@ public class SecondStepDiagnosis {
     private String id; // PK이자 FK
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id", insertable = false, updatable = false)
+    @MapsId
+    @JoinColumn(name = "id")
     private FirstStepDiagnosis firstStepDiagnosis;
 
     @Column(nullable = true)
