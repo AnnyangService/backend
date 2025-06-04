@@ -8,6 +8,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 public class PostThirdStepDiagnosisToAiRequest {
+    private String secondStepDiagnosisResult;
     private List<UserResponse> userResponses;
 
     @AllArgsConstructor

@@ -80,7 +80,7 @@ public class AiServerClient {
         }
     }
 
-    public PostThirdStepDiagnosisToAiResponse requestThirdDiagnosis(List<PostThirdStepDiagnosisRequest.UserResponse> userResponses) {
+    public PostThirdStepDiagnosisToAiResponse requestThirdDiagnosis(String secondStepDiagnosisResult, List<PostThirdStepDiagnosisRequest.UserResponse> userResponses) {
         String endpoint = "/diagnosis/step3/";
         try {
             System.out.println("AI 서버로 3단계 진단 요청: " + aiServerUrl + endpoint);
@@ -88,10 +88,12 @@ public class AiServerClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            PostThirdStepDiagnosisToAiRequest request = new PostThirdStepDiagnosisToAiRequest(userResponses.stream()
-                .map(userResponse -> new PostThirdStepDiagnosisToAiRequest.UserResponse(
-                    userResponse.getDiagnosisRuleId(), userResponse.getUserResponse()))
-                .toList());
+            PostThirdStepDiagnosisToAiRequest request = new PostThirdStepDiagnosisToAiRequest(
+                secondStepDiagnosisResult,
+                userResponses.stream()
+                    .map(userResponse -> new PostThirdStepDiagnosisToAiRequest.UserResponse(
+                        userResponse.getDiagnosisRuleId(), userResponse.getUserResponse()))
+                    .toList());
             HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
 
             ResponseEntity<String> response = restTemplate.postForEntity(

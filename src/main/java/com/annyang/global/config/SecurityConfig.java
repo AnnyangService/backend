@@ -1,10 +1,10 @@
 package com.annyang.global.config;
 
-import com.annyang.auth.config.AuthConfig;
 import com.annyang.auth.token.JwtAuthenticationFilter;
 import com.annyang.auth.token.JwtTokenProvider;
 import com.annyang.global.exception.CustomAuthenticationEntryPoint;
 
+import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +41,7 @@ public class SecurityConfig {
             .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(new CustomAuthenticationEntryPoint()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/signup", "/auth/login", "/auth/refresh").permitAll()
+                .requestMatchers(HttpMethod.POST, "/diagnosis/step2").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/health").permitAll()

@@ -22,7 +22,7 @@ public class FirstStepDiagnosis extends BaseEntity {
     @PrimaryKeyJoinColumn
     private SecondStepDiagnosis secondStepDiagnosis;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
 
     @Column(nullable = false)
