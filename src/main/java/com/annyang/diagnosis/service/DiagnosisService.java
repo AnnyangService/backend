@@ -113,14 +113,14 @@ public class DiagnosisService {
         ThirdStepDiagnosis thirdStepDiagnosis = ThirdStepDiagnosis.builder()
                 .firstStepDiagnosis(firstStepDiagnosis)
                 .category(response.getCategory())
-                .confidence(response.getConfidence())
+                .description(response.getDescription())
                 .build();
         thirdStepDiagnosisRepository.save(thirdStepDiagnosis);
 
         return PostThirdStepDiagnosisResponse.builder()
                 .id(thirdStepDiagnosis.getId())
                 .category(thirdStepDiagnosis.getCategory())
-                .confidence(thirdStepDiagnosis.getConfidence())
+                .description(thirdStepDiagnosis.getDescription())
                 .build();
     }
 }

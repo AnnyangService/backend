@@ -103,7 +103,7 @@ public class AiServerClient {
             JsonNode data = root.path("data");
             return new PostThirdStepDiagnosisToAiResponse(
                 data.path("category").asText(),
-                data.path("confidence").asDouble()
+                data.path("description").asText()
             );
         } catch (Exception e) {
             /**
@@ -111,7 +111,7 @@ public class AiServerClient {
             throw new DiagnosisException();
              */
             return new PostThirdStepDiagnosisToAiResponse(
-                "test category", 0.7
+                "keratitis", "LLM이 생성한 진단 결과"
             );
         }
     }

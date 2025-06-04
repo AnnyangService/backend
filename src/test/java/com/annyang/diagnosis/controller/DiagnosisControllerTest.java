@@ -131,7 +131,7 @@ public class DiagnosisControllerTest {
                 + "\"message\": \"Success\","
                 + "\"data\": {"
                 + "  \"category\": \"testCategory\","
-                + "  \"confidence\": 0.95"
+                + "  \"description\": \"LLM이 생성한 진단 결과\""
                 + "}"
                 + "}";
         ResponseEntity<String> mockThirdStepResponseEntity = 
@@ -323,6 +323,6 @@ public class DiagnosisControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").exists())
                 .andExpect(jsonPath("$.data.category").exists())
-                .andExpect(jsonPath("$.data.confidence").exists());
+                .andExpect(jsonPath("$.data.description").exists());
     }
 }

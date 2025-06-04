@@ -22,16 +22,16 @@ public class ThirdStepDiagnosis extends BaseEntity {
     @JoinColumn(name = "id")
     private FirstStepDiagnosis firstStepDiagnosis;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String category;
 
-    @Column(nullable = true)
-    private double confidence;
+    @Column(nullable = false)
+    private String description;
 
     @Builder
-    public ThirdStepDiagnosis(FirstStepDiagnosis firstStepDiagnosis, String category, double confidence) {
+    public ThirdStepDiagnosis(FirstStepDiagnosis firstStepDiagnosis, String category, String description) {
         this.firstStepDiagnosis = firstStepDiagnosis;
         this.category = category;
-        this.confidence = confidence;
+        this.description = description;
     }
 }
