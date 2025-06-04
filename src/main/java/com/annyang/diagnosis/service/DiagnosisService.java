@@ -93,14 +93,14 @@ public class DiagnosisService {
     }
 
     public GetDiagnosisRuleResponse getDiagnosisRules() {
-        // TDOO 로컬 테스트용으로 mocking 규칙 데이터베이스에서 삽입
-        diagnosisRuleRepository.saveAll(List.of(
-                new DiagnosisRule("분비물 특성(점액성, 화농성, 수양성)"),
-                new DiagnosisRule("증상 진행 속도"),
-                new DiagnosisRule("증상")
-        ));
-        System.out.println("Diagnosis rules initialized for local testing.");
-        List<DiagnosisRule> rules = diagnosisRuleRepository.findAll();
+        // TDOO DB에 저장해서 사용하도록 변경 필요
+        // System.out.println("Diagnosis rules initialized for local testing.");
+        List<DiagnosisRule> rules = List.of(
+                DiagnosisRule.builder().id(1).name("분비물 특성").build(),
+                DiagnosisRule.builder().id(2).name("진행 속도").build(),
+                DiagnosisRule.builder().id(3).name("주요 증상").build(),
+                DiagnosisRule.builder().id(4).name("발생패턴").build()
+        );
         return GetDiagnosisRuleResponse.builder()
                 .rules(rules)
                 .build();

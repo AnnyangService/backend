@@ -13,7 +13,7 @@ public class GetDiagnosisRuleResponse {
     @Builder
     public GetDiagnosisRuleResponse(List<com.annyang.diagnosis.entity.DiagnosisRule> rules) {
         this.rules = rules.stream()
-                .map(rule -> new DiagnosisRule(rule.getId(), rule.getName()))
+                .map(rule -> new DiagnosisRule(rule.getId().toString(), rule.getName()))
                 .toList();
     }
 
