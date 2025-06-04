@@ -20,5 +20,5 @@ public class DiagnosisRuleDescriptionId implements Serializable {
     private String diagnosisTargetId;
     
     @Column(name = "diagnosis_rule_id", length = 255)
-    private String diagnosisRuleId;
+    private Integer diagnosisRuleId;
 }

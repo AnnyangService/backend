@@ -18,14 +18,13 @@ import com.annyang.diagnosis.repository.DiagnosisRuleRepository;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.annotation.Validated;
 import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
 
 @Service
@@ -41,11 +40,7 @@ public class DiagnosisService {
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
         PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
-        /**
-        TODO: AI 서버 구현 완료 후 비밀번호 생성 로직을 UUID로 변경
         String passwordForSecondStep = UUID.randomUUID().toString();
-         */
-        String passwordForSecondStep = "password";
 
         FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
                 .imageUrl(request.getImageUrl())
@@ -93,14 +88,14 @@ public class DiagnosisService {
     }
 
     public GetDiagnosisRuleResponse getDiagnosisRules() {
-        // TDOO 로컬 테스트용으로 mocking 규칙 데이터베이스에서 삽입
-        diagnosisRuleRepository.saveAll(List.of(
-                new DiagnosisRule("분비물 특성(점액성, 화농성, 수양성)"),
-                new DiagnosisRule("증상 진행 속도"),
-                new DiagnosisRule("증상")
-        ));
-        System.out.println("Diagnosis rules initialized for local testing.");
-        List<DiagnosisRule> rules = diagnosisRuleRepository.findAll();
+        // TDOO DB에 저장해서 사용하도록 변경 필요
+        // System.out.println("Diagnosis rules initialized for local testing.");
+        List<DiagnosisRule> rules = List.of(
+                DiagnosisRule.builder().id(1).name("분비물 특성").build(),
+                DiagnosisRule.builder().id(2).name("진행 속도").build(),
+                DiagnosisRule.builder().id(3).name("주요 증상").build(),
+                DiagnosisRule.builder().id(4).name("발생패턴").build()
+        );
         return GetDiagnosisRuleResponse.builder()
                 .rules(rules)
                 .build();
@@ -118,14 +113,14 @@ public class DiagnosisService {
         ThirdStepDiagnosis thirdStepDiagnosis = ThirdStepDiagnosis.builder()
                 .firstStepDiagnosis(firstStepDiagnosis)
                 .category(response.getCategory())
-                .confidence(response.getConfidence())
+                .description(response.getDescription())
                 .build();
         thirdStepDiagnosisRepository.save(thirdStepDiagnosis);
 
         return PostThirdStepDiagnosisResponse.builder()
                 .id(thirdStepDiagnosis.getId())
                 .category(thirdStepDiagnosis.getCategory())
-                .confidence(thirdStepDiagnosis.getConfidence())
+                .description(thirdStepDiagnosis.getDescription())
                 .build();
     }
 }

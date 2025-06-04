@@ -7,5 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class PostThirdStepDiagnosisToAiResponse {
     private String category;
-    private double confidence;
+    private String description;
 }

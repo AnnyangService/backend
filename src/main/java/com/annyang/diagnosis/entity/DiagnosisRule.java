@@ -8,13 +8,14 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-import com.annyang.global.entity.BaseEntity;
-
 @Entity
 @Table(name = "diagnosis_rule")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class DiagnosisRule extends BaseEntity {
+public class DiagnosisRule {
+
+    @Id
+    private Integer id; // PK이자 FK, BaseEntity에서 상속받음
     
     @Column(nullable = false, length = 255)
     private String name; // ex. 증상, 증상 진행 속도
@@ -23,8 +24,8 @@ public class DiagnosisRule extends BaseEntity {
     private List<DiagnosisRuleDescription> ruleDescriptions;
     
     @Builder
-    public DiagnosisRule(String name) {
-        super();
+    public DiagnosisRule(Integer id, String name) {
+        this.id = id;
         this.name = name;
     }
 }

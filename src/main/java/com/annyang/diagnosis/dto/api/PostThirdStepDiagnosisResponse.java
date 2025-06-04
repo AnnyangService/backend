@@ -8,5 +8,5 @@ import lombok.Getter;
 public class PostThirdStepDiagnosisResponse {
     private String id;
     private String category;
-    private double confidence;
+    private String description;
 }
