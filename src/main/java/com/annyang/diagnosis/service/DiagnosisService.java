@@ -18,14 +18,13 @@ import com.annyang.diagnosis.repository.DiagnosisRuleRepository;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.validation.annotation.Validated;
 import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
 
 @Service
@@ -41,11 +40,7 @@ public class DiagnosisService {
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
         PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
-        /**
-        TODO: AI 서버 구현 완료 후 비밀번호 생성 로직을 UUID로 변경
         String passwordForSecondStep = UUID.randomUUID().toString();
-         */
-        String passwordForSecondStep = "password";
 
         FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
                 .imageUrl(request.getImageUrl())
