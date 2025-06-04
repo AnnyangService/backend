@@ -44,6 +44,7 @@ public class DiagnosisController {
     @PostMapping("/step2")
     public ResponseEntity<ApiResponse<Boolean>> createSecondStepDiagnosis(
             @Valid @RequestBody PostSecondStepDiagnosisRequest request) {
+        System.out.println("Received request for second step diagnosis: " + request);
         diagnosisService.createSecondStepDiagnosis(request);
         return ResponseEntity.ok(ApiResponse.success(true));
     }
