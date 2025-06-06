@@ -36,9 +36,9 @@ jobs:
         DB_PASSWORD=$(aws ssm get-parameter --name "/annyang/db/password" --with-decryption --query "Parameter.Value" --output text)
         
         # CodeDeploy 관련 파라미터 가져오기
-        CODEDEPLOY_APP_NAME=$(aws ssm get-parameter --name "/annyang/deploy/api-server/app_name" --query "Parameter.Value" --output text)
-        CODEDEPLOY_GROUP_NAME=$(aws ssm get-parameter --name "/annyang/deploy/api-server/group_name" --query "Parameter.Value" --output text)
-        CODEDEPLOY_BUCKET=$(aws ssm get-parameter --name "/annyang/deploy/api-server/bucket" --query "Parameter.Value" --output text)
+        CODEDEPLOY_APP_NAME=$(aws ssm get-parameter --name "/annyang/server-deploy/app_name" --query "Parameter.Value" --output text)
+        CODEDEPLOY_GROUP_NAME=$(aws ssm get-parameter --name "/annyang/server-deploy/api-server/group_name" --query "Parameter.Value" --output text)
+        CODEDEPLOY_BUCKET=$(aws ssm get-parameter --name "/annyang/server-deploy/bucket" --query "Parameter.Value" --output text)
 
         # AI 서버 URL 가져오기
         AI_SERVER_URL=$(aws ssm get-parameter --name "/annyang/ai-server/url" --query "Parameter.Value" --output text)
@@ -94,12 +94,12 @@ jobs:
         
     - name: Upload to S3
       run: |
-        aws s3 cp deploy.zip s3://${{ env.CODEDEPLOY_BUCKET }}/hi-meow-app/deploy-${{ github.run_number }}.zip
+        aws s3 cp deploy.zip s3://${{ env.CODEDEPLOY_BUCKET }}/api-server.zip
         
     - name: Create CodeDeploy Deployment
       run: |
         aws deploy create-deployment \
           --application-name ${{ env.CODEDEPLOY_APP_NAME }} \
           --deployment-group-name ${{ env.CODEDEPLOY_GROUP_NAME }} \
-          --s3-location bucket=${{ env.CODEDEPLOY_BUCKET }},key=hi-meow-app/deploy-${{ github.run_number }}.zip,bundleType=zip \
-          --description "Deployment from GitHub Actions workflow" 
+          --s3-location bucket=${{ env.CODEDEPLOY_BUCKET }},key=api-server.zip,bundleType=zip \
+          --description "Deployment from GitHub Actions workflow"
