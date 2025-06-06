@@ -65,4 +65,5 @@ tasks.named('asciidoctor') {
 
 jar {
     enabled = false  // plain.jar 생성 비활성화
+    archiveFileName = 'hi-meow-api-server.jar'
 }
