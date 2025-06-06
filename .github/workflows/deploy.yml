@@ -94,12 +94,12 @@ jobs:
         
     - name: Upload to S3
       run: |
-        aws s3 cp deploy.zip s3://${{ env.CODEDEPLOY_BUCKET }}/api-server.zip
+        aws s3 cp deploy.zip s3://${{ env.CODEDEPLOY_BUCKET }}/api-server-deploy.zip
         
     - name: Create CodeDeploy Deployment
       run: |
         aws deploy create-deployment \
           --application-name ${{ env.CODEDEPLOY_APP_NAME }} \
           --deployment-group-name ${{ env.CODEDEPLOY_GROUP_NAME }} \
-          --s3-location bucket=${{ env.CODEDEPLOY_BUCKET }},key=api-server.zip,bundleType=zip \
+          --s3-location bucket=${{ env.CODEDEPLOY_BUCKET }},key=api-server-deploy.zip,bundleType=zip \
           --description "Deployment from GitHub Actions workflow"
