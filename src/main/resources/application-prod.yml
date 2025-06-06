@@ -6,7 +6,7 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: create-drop # database migration script 도입 후 none으로 변경
     show-sql: false
     properties:
       hibernate:
