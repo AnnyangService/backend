@@ -77,15 +77,10 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build  # 테스트 포함
     
-    - name: Set JAR filename
-      id: jar-filename
-      run: |
-        echo "JAR_FILE=$(ls build/libs/hi_meow-*.jar | xargs basename)" >> $GITHUB_OUTPUT
-        
     - name: Prepare Deployment Bundle
       run: |
         mkdir -p codedeploy-bundle
-        cp build/libs/${{ steps.jar-filename.outputs.JAR_FILE }} codedeploy-bundle/hi-meow-app.jar
+        cp build/libs/hi-meow-api-server.jar codedeploy-bundle/hi-meow-api-server.jar
         cp .github/deploy/appspec.yml codedeploy-bundle/
         cp -r .github/deploy/scripts codedeploy-bundle/
         cd codedeploy-bundle

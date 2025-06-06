@@ -1,7 +1,7 @@
 version: 0.0
 os: linux
 files:
-  - source: hi-meow-app.jar
+  - source: hi-meow-api-server.jar
     destination: /app
 hooks:
   BeforeInstall:
