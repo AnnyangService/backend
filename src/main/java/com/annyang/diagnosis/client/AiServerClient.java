@@ -92,7 +92,7 @@ public class AiServerClient {
                 secondStepDiagnosisResult,
                 userResponses.stream()
                     .map(userResponse -> new PostThirdStepDiagnosisToAiRequest.UserResponse(
-                        userResponse.getDiagnosisRuleId(), userResponse.getUserResponse()))
+                        Integer.parseInt(userResponse.getDiagnosisRuleId()), userResponse.getUserResponse()))
                     .toList());
             HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
 
@@ -106,13 +106,9 @@ public class AiServerClient {
                 data.path("description").asText()
             );
         } catch (Exception e) {
-            /**
-            TODO AI 서버 구현 완료 후 mock 데이터 반환하는 대신 예외처리
+            System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
             throw new DiagnosisException();
-             */
-            return new PostThirdStepDiagnosisToAiResponse(
-                "keratitis", "LLM이 생성한 진단 결과"
-            );
         }
     }
 }
