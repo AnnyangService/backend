@@ -25,7 +25,7 @@ public class ThirdStepDiagnosis extends BaseEntity {
     @Column(nullable = false)
     private String category;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Builder

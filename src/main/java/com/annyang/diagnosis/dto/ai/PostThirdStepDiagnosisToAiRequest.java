@@ -9,13 +9,13 @@ import java.util.List;
 @Getter
 public class PostThirdStepDiagnosisToAiRequest {
     private String secondStepDiagnosisResult;
-    private List<UserResponse> userResponses;
+    private List<UserResponse> attributes;
 
     @AllArgsConstructor
     @Getter
     public static class UserResponse {
-        public String diagnosisRuleId;
-        public String userResponse;
+        public Integer id;
+        public String description;
     }
 }
 
