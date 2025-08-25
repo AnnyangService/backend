@@ -46,7 +46,9 @@ docker compose logs -f mariadb
 ### 🌐 기본 로컬 환경 접속 정보
 
 - Spring 애플리케이션 → http://localhost:8080
+- Swagger UI (API 문서) → http://localhost:8080/swagger-ui/index.html
 - MariaDB → localhost:3306
   - 데이터베이스: hi_meow
   - 사용자: admin
   - 비밀번호: 1234
+
