@@ -110,17 +110,9 @@ public class DiagnosisService {
 
         PostThirdStepDiagnosisToAiResponse response = aiServerClient.requestThirdDiagnosis(secondStepDiagnosis.getCategory(), request.getUserResponses());
 
-        ThirdStepDiagnosis thirdStepDiagnosis = ThirdStepDiagnosis.builder()
-                .firstStepDiagnosis(firstStepDiagnosis)
-                .category(response.getCategory())
-                .description(response.getDescription())
-                .build();
+        ThirdStepDiagnosis thirdStepDiagnosis = new ThirdStepDiagnosis(firstStepDiagnosis, response);
         thirdStepDiagnosisRepository.save(thirdStepDiagnosis);
 
-        return PostThirdStepDiagnosisResponse.builder()
-                .id(thirdStepDiagnosis.getId())
-                .category(thirdStepDiagnosis.getCategory())
-                .description(thirdStepDiagnosis.getDescription())
-                .build();
+        return new PostThirdStepDiagnosisResponse(thirdStepDiagnosis);
     }
 }
