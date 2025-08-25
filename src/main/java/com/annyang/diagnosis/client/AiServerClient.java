@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -101,9 +103,24 @@ public class AiServerClient {
             
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode data = root.path("data");
+            
+            // attribute_analysis 파싱
+            Map<String, PostThirdStepDiagnosisToAiResponse.AttributeAnalysis> attributeAnalysis = new HashMap<>();
+            JsonNode attributeAnalysisNode = data.path("attribute_analysis");
+            if (!attributeAnalysisNode.isMissingNode()) {
+                attributeAnalysisNode.fields().forEachRemaining(entry -> {
+                    String key = entry.getKey();
+                    JsonNode value = entry.getValue();
+                    String llmAnalysis = value.path("llm_analysis").asText();
+                    attributeAnalysis.put(key, new PostThirdStepDiagnosisToAiResponse.AttributeAnalysis(llmAnalysis));
+                });
+            }
+            
             return new PostThirdStepDiagnosisToAiResponse(
                 data.path("category").asText(),
-                data.path("description").asText()
+                data.path("summary").asText(),
+                data.path("details").asText(),
+                attributeAnalysis
             );
         } catch (Exception e) {
             System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());

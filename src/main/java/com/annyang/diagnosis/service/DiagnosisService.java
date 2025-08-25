@@ -108,19 +108,13 @@ public class DiagnosisService {
         SecondStepDiagnosis secondStepDiagnosis = secondStepDiagnosisRepository.findById(firstStepDiagnosis.getId())
                 .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found for FirstStepDiagnosis with id: " + request.getDiagnosisId()));
 
-        PostThirdStepDiagnosisToAiResponse response = aiServerClient.requestThirdDiagnosis(secondStepDiagnosis.getCategory(), request.getUserResponses());
-
-        ThirdStepDiagnosis thirdStepDiagnosis = ThirdStepDiagnosis.builder()
-                .firstStepDiagnosis(firstStepDiagnosis)
-                .category(response.getCategory())
-                .description(response.getDescription())
-                .build();
-        thirdStepDiagnosisRepository.save(thirdStepDiagnosis);
-
-        return PostThirdStepDiagnosisResponse.builder()
-                .id(thirdStepDiagnosis.getId())
-                .category(thirdStepDiagnosis.getCategory())
-                .description(thirdStepDiagnosis.getDescription())
-                .build();
+        ThirdStepDiagnosis thirdStepDiagnosis = thirdStepDiagnosisRepository.findById(firstStepDiagnosis.getId())
+            .orElseGet(() -> {
+                PostThirdStepDiagnosisToAiResponse response = aiServerClient.requestThirdDiagnosis(secondStepDiagnosis.getCategory(), request.getUserResponses());
+                ThirdStepDiagnosis _thirdStepDiagnosis = new ThirdStepDiagnosis(firstStepDiagnosis, response);
+                thirdStepDiagnosisRepository.save(_thirdStepDiagnosis);
+                return _thirdStepDiagnosis;
+            });
+        return new PostThirdStepDiagnosisResponse(thirdStepDiagnosis);
     }
 }
