@@ -23,13 +23,13 @@ public class ChatbotController {
 
     private final ChatbotService chatbotService;
 
-    @PostMapping("/session")
+    @PostMapping("/sessions")
     public ResponseEntity<ApiResponse<PostChatbotSessionResponse>> createChatbotSession(@RequestBody PostChatbotSessionRequest request) {
         PostChatbotSessionResponse response = chatbotService.createChatbotSession(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    @PostMapping("/session/{sessionId}/conversations")
+    @PostMapping("/sessions/{sessionId}/conversations")
     public ResponseEntity<ApiResponse<PostChatbotConversationResponse>> submitQuery(
             @PathVariable String sessionId,
             @RequestBody PostChatbotConversationRequest request) {

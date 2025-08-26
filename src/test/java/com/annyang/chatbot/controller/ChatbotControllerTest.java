@@ -163,7 +163,7 @@ public class ChatbotControllerTest {
                 .build();
 
         // When & Then
-        mockMvc.perform(post("/chatbot/session")
+        mockMvc.perform(post("/chatbot/sessions")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -185,7 +185,7 @@ public class ChatbotControllerTest {
                 .build();
 
         // When & Then
-        mockMvc.perform(post("/chatbot/session/{sessionId}/conversations", savedChatbotSession.getId())
+        mockMvc.perform(post("/chatbot/sessions/{sessionId}/conversations", savedChatbotSession.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
