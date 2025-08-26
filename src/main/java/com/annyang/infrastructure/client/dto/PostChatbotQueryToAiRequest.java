@@ -9,7 +9,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@RequiredArgsConstructor
 public class PostChatbotQueryToAiRequest {
     @NonNull
     String query;
@@ -29,4 +28,13 @@ public class PostChatbotQueryToAiRequest {
     
     @JsonProperty("two_turn_answer")
     String twoTurnAnswer;
+
+    public PostChatbotQueryToAiRequest(@NonNull String query, @NonNull String diagnosisResult) {
+        this.query = query;
+        this.diagnosisResult = diagnosisResult;
+        this.previousQuestion = "";
+        this.previousAnswer = "";
+        this.twoTurnQuestion = "";
+        this.twoTurnAnswer = "";
+    }
 }
