@@ -2,14 +2,19 @@ package com.annyang.infrastructure.client.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 @Getter
-@AllArgsConstructor
+@Setter
+@RequiredArgsConstructor
 public class PostChatbotQueryToAiRequest {
+    @NonNull
     String query;
     
+    @NonNull
     @JsonProperty("diagnosis_result")
     String diagnosisResult;
     

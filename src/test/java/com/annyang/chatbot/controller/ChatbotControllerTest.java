@@ -1,7 +1,10 @@
 package com.annyang.chatbot.controller;
 
 import com.annyang.Main;
+import com.annyang.chatbot.dto.PostChatbotConversationRequest;
 import com.annyang.chatbot.dto.PostChatbotSessionRequest;
+import com.annyang.chatbot.entity.ChatbotSession;
+import com.annyang.chatbot.repository.ChatbotSessionRepository;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
 import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
@@ -57,6 +60,9 @@ public class ChatbotControllerTest {
 
     @Autowired
     private ThirdStepDiagnosisRepository thirdStepDiagnosisRepository;
+
+    @Autowired
+    private ChatbotSessionRepository chatbotSessionRepository;
 
     @Value("${ai.server.url}")
     private String aiServerUrl;
@@ -165,5 +171,25 @@ public class ChatbotControllerTest {
                 .andExpect(jsonPath("$.data.session_id").exists())
                 .andExpect(jsonPath("$.data.first_conversation.question").exists())
                 .andExpect(jsonPath("$.data.first_conversation.answer").exists());
+    }
+
+    @Test
+    @DisplayName("챗봇 질문 제출 API 성공")
+    @WithMockUser(username = USER_ID)
+    void submitQuery_Success() throws Exception {
+        // Given
+        ChatbotSession savedChatbotSession = new ChatbotSession(savedThirdStepDiagnosis);
+        savedChatbotSession = chatbotSessionRepository.save(savedChatbotSession);
+        PostChatbotConversationRequest request = PostChatbotConversationRequest.builder()
+                .query("이 질병에 대해 알려주세요.")
+                .build();
+
+        // When & Then
+        mockMvc.perform(post("/chatbot/session/{sessionId}/conversations", savedChatbotSession.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.answer").exists());
     }
 }

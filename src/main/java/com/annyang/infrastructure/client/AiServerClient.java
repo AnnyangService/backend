@@ -26,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import com.annyang.chatbot.entity.ChatbotConversation;
 import com.annyang.diagnosis.dto.PostThirdStepDiagnosisRequest;
 import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
 
@@ -159,7 +160,7 @@ public class AiServerClient {
         }
     }
 
-    public PostChatbotQueryToAiResponse submitChatbotQuery(String query, String diagnosisResult, String previousQuestion, String previousAnswer, String twoTurnQuestion, String twoTurnAnswer) {
+    public PostChatbotQueryToAiResponse submitChatbotQuery(String query, String diagnosisResult, List<ChatbotConversation> conversations) {
         String endpoint = "/chat/second";
 
         try {
@@ -167,7 +168,17 @@ public class AiServerClient {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            PostChatbotQueryToAiRequest request = new PostChatbotQueryToAiRequest(query, diagnosisResult, previousQuestion, previousAnswer, twoTurnQuestion, twoTurnAnswer);
+            PostChatbotQueryToAiRequest request = new PostChatbotQueryToAiRequest(query, diagnosisResult);
+            for(int i=0; i<conversations.size(); i++) {
+                ChatbotConversation conversation = conversations.get(i);
+                if (i == 0) {
+                    request.setPreviousQuestion(conversation.getQuestion());
+                    request.setPreviousAnswer(conversation.getAnswer());
+                } else if (i == 1) {
+                    request.setTwoTurnQuestion(conversation.getQuestion());
+                    request.setTwoTurnAnswer(conversation.getAnswer());
+                }
+            }
             HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
 
             ResponseEntity<String> response = restTemplate.postForEntity(
