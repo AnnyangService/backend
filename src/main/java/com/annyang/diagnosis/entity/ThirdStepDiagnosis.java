@@ -1,8 +1,8 @@
 package com.annyang.diagnosis.entity;
 
 import com.annyang.diagnosis.converter.AttributeAnalysisMapConverter;
-import com.annyang.diagnosis.dto.ai.PostThirdStepDiagnosisToAiResponse;
 import com.annyang.global.entity.BaseEntity;
+import com.annyang.infrastructure.client.dto.PostThirdStepDiagnosisToAiResponse;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

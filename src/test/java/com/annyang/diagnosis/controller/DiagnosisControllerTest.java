@@ -1,14 +1,14 @@
 package com.annyang.diagnosis.controller;
 
 import com.annyang.Main;
-import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
-import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.PostFirstStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.PostSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.PostThirdStepDiagnosisRequest;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
-import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
