@@ -1,12 +1,12 @@
 package com.annyang.diagnosis.controller;
 
-import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisRequest;
-import com.annyang.diagnosis.dto.api.PostFirstStepDiagnosisResponse;
-import com.annyang.diagnosis.dto.api.PostSecondStepDiagnosisRequest;
-import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisRequest;
-import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisResponse;
-import com.annyang.diagnosis.dto.api.GetDiagnosisRuleResponse;
-import com.annyang.diagnosis.dto.api.GetSecondStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.GetDiagnosisRuleResponse;
+import com.annyang.diagnosis.dto.GetSecondStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.PostFirstStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.PostFirstStepDiagnosisResponse;
+import com.annyang.diagnosis.dto.PostSecondStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.PostThirdStepDiagnosisRequest;
+import com.annyang.diagnosis.dto.PostThirdStepDiagnosisResponse;
 import com.annyang.diagnosis.service.DiagnosisService;
 import com.annyang.global.response.ApiResponse;
 
