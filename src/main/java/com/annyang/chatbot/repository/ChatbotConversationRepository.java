@@ -8,4 +8,5 @@ import com.annyang.chatbot.entity.ChatbotConversation;
 
 public interface ChatbotConversationRepository extends JpaRepository<ChatbotConversation, String> {
     List<ChatbotConversation> findTop2ByChatbotSessionIdOrderByCreatedAtDesc(String chatbotSessionId);
+    List<ChatbotConversation> findByChatbotSessionIdOrderByCreatedAtAsc(String chatbotSessionId);
 }

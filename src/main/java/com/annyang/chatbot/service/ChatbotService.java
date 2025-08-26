@@ -1,9 +1,11 @@
 package com.annyang.chatbot.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.annyang.chatbot.dto.GetChatbotSessionResponse;
 import com.annyang.chatbot.dto.PostChatbotConversationRequest;
 import com.annyang.chatbot.dto.PostChatbotConversationResponse;
 import com.annyang.chatbot.dto.PostChatbotSessionRequest;
@@ -53,6 +55,27 @@ public class ChatbotService {
         chatbotConversationRepository.save(conversation);
         return PostChatbotConversationResponse.builder()
                 .answer(conversation.getAnswer())
+                .build();
+    }
+
+    public GetChatbotSessionResponse getChatbotSession(String sessionId) {
+        if (!chatbotSessionRepository.existsById(sessionId)) {
+            throw new ChatbotSessionNotFoundException();
+        }
+        
+        List<ChatbotConversation> conversations = chatbotConversationRepository
+                .findByChatbotSessionIdOrderByCreatedAtAsc(sessionId);
+        
+        List<GetChatbotSessionResponse.ConversationDto> conversationDtos = conversations.stream()
+                .map(conversation -> GetChatbotSessionResponse.ConversationDto.builder()
+                        .question(conversation.getQuestion())
+                        .answer(conversation.getAnswer())
+                        .createdAt(conversation.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+        
+        return GetChatbotSessionResponse.builder()
+                .conversations(conversationDtos)
                 .build();
     }
 }

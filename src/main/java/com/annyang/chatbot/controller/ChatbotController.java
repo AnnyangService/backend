@@ -1,12 +1,14 @@
 package com.annyang.chatbot.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.annyang.chatbot.dto.GetChatbotSessionResponse;
 import com.annyang.chatbot.dto.PostChatbotConversationRequest;
 import com.annyang.chatbot.dto.PostChatbotConversationResponse;
 import com.annyang.chatbot.dto.PostChatbotSessionRequest;
@@ -34,6 +36,12 @@ public class ChatbotController {
             @PathVariable String sessionId,
             @RequestBody PostChatbotConversationRequest request) {
         PostChatbotConversationResponse response = chatbotService.submitQuery(sessionId, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/sessions/{sessionId}/conversations")
+    public ResponseEntity<ApiResponse<GetChatbotSessionResponse>> getChatbotSession(@PathVariable String sessionId) {
+        GetChatbotSessionResponse response = chatbotService.getChatbotSession(sessionId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

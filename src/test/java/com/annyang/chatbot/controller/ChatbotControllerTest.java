@@ -3,7 +3,9 @@ package com.annyang.chatbot.controller;
 import com.annyang.Main;
 import com.annyang.chatbot.dto.PostChatbotConversationRequest;
 import com.annyang.chatbot.dto.PostChatbotSessionRequest;
+import com.annyang.chatbot.entity.ChatbotConversation;
 import com.annyang.chatbot.entity.ChatbotSession;
+import com.annyang.chatbot.repository.ChatbotConversationRepository;
 import com.annyang.chatbot.repository.ChatbotSessionRepository;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
@@ -34,6 +36,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -63,6 +66,9 @@ public class ChatbotControllerTest {
 
     @Autowired
     private ChatbotSessionRepository chatbotSessionRepository;
+
+    @Autowired
+    private ChatbotConversationRepository chatbotConversationRepository;
 
     @Value("${ai.server.url}")
     private String aiServerUrl;
@@ -191,5 +197,26 @@ public class ChatbotControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.answer").exists());
+    }
+
+    @Test
+    @DisplayName("챗봇 세션 대화 목록 조회 API 성공")
+    @WithMockUser(username = USER_ID)
+    void getChatbotSession_Success() throws Exception {
+        // Given
+        ChatbotSession savedChatbotSession = new ChatbotSession(savedThirdStepDiagnosis);
+        savedChatbotSession = chatbotSessionRepository.save(savedChatbotSession);
+        ChatbotConversation savedChatbotConversation = new ChatbotConversation(savedChatbotSession, "질문", "답변");
+        savedChatbotConversation = chatbotConversationRepository.save(savedChatbotConversation);
+
+        // When & Then
+        mockMvc.perform(get("/chatbot/sessions/{sessionId}/conversations", savedChatbotSession.getId())
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.conversations").isArray())
+                .andExpect(jsonPath("$.data.conversations[0].question").value("질문"))
+                .andExpect(jsonPath("$.data.conversations[0].answer").value("답변"))
+                .andExpect(jsonPath("$.data.conversations[0].createdAt").exists());
     }
 }
