@@ -24,7 +24,8 @@ public enum ErrorCode {
     CAT_NOT_FOUND("C001", "Cat not found", HttpStatus.NOT_FOUND),
     
     // 진단
-    DIAGNOSIS_SERVER_ERROR("D001", "진단 서비스 호출 중 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR);
+    DIAGNOSIS_SERVER_ERROR("D001", "진단 서비스 호출 중 오류가 발생했습니다", HttpStatus.INTERNAL_SERVER_ERROR),
+    DIAGNOSIS_NOT_FOUND("D002", "Diagnosis not found", HttpStatus.NOT_FOUND);
 
     private final String code;
     private final String message;
