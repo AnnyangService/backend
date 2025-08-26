@@ -55,7 +55,9 @@ dependencies {
 
 tasks.named('test') {
 	outputs.dir snippetsDir
-	useJUnitPlatform()
+	useJUnitPlatform {
+        excludeTags 'manual'
+    }
 }
 
 tasks.named('asciidoctor') {
