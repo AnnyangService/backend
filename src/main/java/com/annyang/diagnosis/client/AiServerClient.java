@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import com.annyang.diagnosis.dto.ai.PostChatbotSessionToAiRequest;
+import com.annyang.diagnosis.dto.ai.PostChatbotSessionToAiResponse;
 import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiRequest;
 import com.annyang.diagnosis.dto.ai.PostFirstStepDiagnosisToAiResponse;
 import com.annyang.diagnosis.dto.ai.PostSecondStepDiagnosisToAiRequest;
@@ -24,6 +26,7 @@ import com.annyang.diagnosis.dto.ai.PostThirdStepDiagnosisToAiRequest;
 import com.annyang.diagnosis.dto.ai.PostThirdStepDiagnosisToAiResponse;
 
 import com.annyang.diagnosis.dto.api.PostThirdStepDiagnosisRequest;
+import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
 
 @Component
 @RequiredArgsConstructor
@@ -121,6 +124,32 @@ public class AiServerClient {
                 data.path("summary").asText(),
                 data.path("details").asText(),
                 attributeAnalysis
+            );
+        } catch (Exception e) {
+            System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new DiagnosisException();
+        }
+    }
+
+    public PostChatbotSessionToAiResponse createChatbotSession(String query, ThirdStepDiagnosis thirdStepDiagnosis) {
+        String endpoint = "/chat/first";
+        try {
+            System.out.println("AI 서버 챗봇 세션 생성 요청: " + aiServerUrl + endpoint);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            PostChatbotSessionToAiRequest request = new PostChatbotSessionToAiRequest(query, thirdStepDiagnosis);
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                aiServerUrl + endpoint, entity, String.class);
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.path("data");
+            return new PostChatbotSessionToAiResponse(
+                    data.path("answer").asText(),
+                    data.path("error").asText()
             );
         } catch (Exception e) {
             System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());
