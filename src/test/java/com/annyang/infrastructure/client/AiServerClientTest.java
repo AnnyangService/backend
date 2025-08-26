@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
+import com.annyang.infrastructure.client.dto.PostChatbotQueryToAiResponse;
 import com.annyang.infrastructure.client.dto.PostChatbotSessionToAiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -43,6 +44,29 @@ public class AiServerClientTest {
 
         // When
         PostChatbotSessionToAiResponse response = aiServerClient.createChatbotSession("이 질병은 어떻게 치료하나요?", thirdStepDiagnosis);
+
+        // Then
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            System.out.println("AI Server Response: " + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(response));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        assertNotNull(response);
+        assertNotNull(response.getAnswer());
+    }
+
+    @Test
+    void testSubmitChatbotQuery_Success() {
+        // Given
+        String diagnosisResult = "비궤양성 각막염";
+        String previousQuestion = "이 질병은 무엇인가요?";
+        String previousAnswer = "비궤양성 각막염은 각막의 염증성 질환입니다.";
+        String twoTurnQuestion = "증상이 심각한가요?";
+        String twoTurnAnswer = "현재 증상은 중간 정도의 심각도를 보입니다.";
+
+        // When
+        PostChatbotQueryToAiResponse response = aiServerClient.submitChatbotQuery("이 질병은 어떻게 치료하나요?", diagnosisResult, previousQuestion, previousAnswer, twoTurnQuestion, twoTurnAnswer);
 
         // Then
         try {

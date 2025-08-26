@@ -1,6 +1,8 @@
 package com.annyang.infrastructure.client;
 
 import com.annyang.diagnosis.exception.DiagnosisException;
+import com.annyang.infrastructure.client.dto.PostChatbotQueryToAiRequest;
+import com.annyang.infrastructure.client.dto.PostChatbotQueryToAiResponse;
 import com.annyang.infrastructure.client.dto.PostChatbotSessionToAiRequest;
 import com.annyang.infrastructure.client.dto.PostChatbotSessionToAiResponse;
 import com.annyang.infrastructure.client.dto.PostFirstStepDiagnosisToAiRequest;
@@ -150,6 +152,30 @@ public class AiServerClient {
                     data.path("answer").asText(),
                     data.path("error").asText()
             );
+        } catch (Exception e) {
+            System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new DiagnosisException();
+        }
+    }
+
+    public PostChatbotQueryToAiResponse submitChatbotQuery(String query, String diagnosisResult, String previousQuestion, String previousAnswer, String twoTurnQuestion, String twoTurnAnswer) {
+        String endpoint = "/chat/second";
+
+        try {
+            System.out.println("AI 서버 챗봇 질문 전송 요청: " + aiServerUrl + endpoint);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            PostChatbotQueryToAiRequest request = new PostChatbotQueryToAiRequest(query, diagnosisResult, previousQuestion, previousAnswer, twoTurnQuestion, twoTurnAnswer);
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    aiServerUrl + endpoint, entity, String.class);
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.path("data");
+            return objectMapper.treeToValue(data, PostChatbotQueryToAiResponse.class);
         } catch (Exception e) {
             System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());
             e.printStackTrace();
