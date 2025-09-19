@@ -2,6 +2,7 @@ package com.annyang.chatbot.entity;
 
 import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
 import com.annyang.global.entity.BaseEntity;
+import com.annyang.member.entity.Member;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +11,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -30,6 +32,10 @@ public class ChatbotSession extends BaseEntity {
     @Column(name = "session_type", nullable = false)
     private SessionType sessionType;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false, foreignKey = @ForeignKey(name = "fk_chatbot_session_member"))
+    private Member member;
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "third_step_diagnosis_id", nullable = true, foreignKey = @ForeignKey(name = "fk_chatbot_session_third_step_diagnosis"))
     private ThirdStepDiagnosis thirdStepDiagnosis;
@@ -38,18 +44,26 @@ public class ChatbotSession extends BaseEntity {
     private String diagnosisResult;
 
     // 진단 기반 챗봇 세션 생성자
-    public ChatbotSession(ThirdStepDiagnosis thirdStepDiagnosis) {
+    public ChatbotSession(Member member, ThirdStepDiagnosis thirdStepDiagnosis) {
+        if (member == null) {
+            throw new IllegalArgumentException("Member cannot be null");
+        }
         if (thirdStepDiagnosis == null) {
             throw new IllegalArgumentException("ThirdStepDiagnosis cannot be null for diagnosis-based session");
         }
+        this.member = member;
         this.sessionType = SessionType.DIAGNOSIS;
         this.thirdStepDiagnosis = thirdStepDiagnosis;
         this.diagnosisResult = thirdStepDiagnosis.getCategory();
     }
 
     // 일반 챗봇 세션 생성 팩토리 메서드
-    public static ChatbotSession createGeneralChatbotSession() {
+    public static ChatbotSession createGeneralChatbotSession(Member member) {
+        if (member == null) {
+            throw new IllegalArgumentException("Member cannot be null");
+        }
         ChatbotSession session = new ChatbotSession();
+        session.member = member;
         session.sessionType = SessionType.GENERAL;
         return session;
     }

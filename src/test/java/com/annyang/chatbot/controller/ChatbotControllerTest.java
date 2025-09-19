@@ -14,6 +14,8 @@ import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
+import com.annyang.member.entity.Member;
+import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +28,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -74,11 +78,27 @@ public class ChatbotControllerTest {
     @Value("${ai.server.url}")
     private String aiServerUrl;
 
-    private static final String USER_ID = "testUser";
+    @Autowired
+    private MemberRepository memberRepository;
+   
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private Member testMember;
+    private static final String USER_ID = "01HXSAXEAASYJY0VZ7J2VPHCX8";
     private ThirdStepDiagnosis savedThirdStepDiagnosis;
 
     @BeforeEach
     void setUp() {
+        // 테스트용 회원 생성
+        testMember = new Member(
+            "test@example.com",
+            passwordEncoder.encode("password123"),
+            "Test User"
+        );
+        ReflectionTestUtils.setField(testMember, "id", USER_ID);
+        memberRepository.save(testMember);
+       
         // 테스트 데이터 생성
         FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
                 .imageUrl("https://s3.bucket/path/to/image.jpg")
@@ -214,7 +234,7 @@ public class ChatbotControllerTest {
     @WithMockUser(username = USER_ID)
     void submitQuery_Success() throws Exception {
         // Given
-        ChatbotSession savedChatbotSession = new ChatbotSession(savedThirdStepDiagnosis);
+        ChatbotSession savedChatbotSession = new ChatbotSession(testMember,savedThirdStepDiagnosis);
         savedChatbotSession = chatbotSessionRepository.save(savedChatbotSession);
         PostChatbotConversationRequest request = PostChatbotConversationRequest.builder()
                 .query("이 질병에 대해 알려주세요.")
@@ -234,7 +254,7 @@ public class ChatbotControllerTest {
     @WithMockUser(username = USER_ID)
     void getChatbotSession_Success() throws Exception {
         // Given
-        ChatbotSession savedChatbotSession = new ChatbotSession(savedThirdStepDiagnosis);
+        ChatbotSession savedChatbotSession = new ChatbotSession(testMember, savedThirdStepDiagnosis);
         savedChatbotSession = chatbotSessionRepository.save(savedChatbotSession);
         ChatbotConversation savedChatbotConversation = new ChatbotConversation(savedChatbotSession, "질문", "답변");
         savedChatbotConversation = chatbotConversationRepository.save(savedChatbotConversation);
@@ -248,5 +268,25 @@ public class ChatbotControllerTest {
                 .andExpect(jsonPath("$.data.conversations[0].question").value("질문"))
                 .andExpect(jsonPath("$.data.conversations[0].answer").value("답변"))
                 .andExpect(jsonPath("$.data.conversations[0].createdAt").exists());
+    }
+
+    @Test
+    @DisplayName("챗봇 세션 목록 조회 API 성공")
+    @WithMockUser(username = USER_ID)
+    void getChatbotSessions_Success() throws Exception {
+        // Given
+        ChatbotSession savedChatbotSession1 = new ChatbotSession(testMember, savedThirdStepDiagnosis);
+        savedChatbotSession1 = chatbotSessionRepository.save(savedChatbotSession1);
+        ChatbotSession savedChatbotSession2 = ChatbotSession.createGeneralChatbotSession(testMember);
+        savedChatbotSession2 = chatbotSessionRepository.save(savedChatbotSession2); 
+        // When & Then
+        mockMvc.perform(get("/chatbot/sessions")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.sessions").isArray())
+                .andExpect(jsonPath("$.data.sessions.length()").value(2))
+                .andExpect(jsonPath("$.data.sessions[0].session_id").value(savedChatbotSession2.getId()))
+                .andExpect(jsonPath("$.data.sessions[1].session_id").value(savedChatbotSession1.getId()));
     }
 }

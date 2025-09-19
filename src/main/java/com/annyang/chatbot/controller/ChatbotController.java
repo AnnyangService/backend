@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.annyang.chatbot.dto.GetChatbotSessionResponse;
+import com.annyang.chatbot.dto.GetChatbotSetssionListResponse;
 import com.annyang.chatbot.dto.PostChatbotConversationRequest;
 import com.annyang.chatbot.dto.PostChatbotConversationResponse;
 import com.annyang.chatbot.dto.PostChatbotGeneralSessionRequest;
@@ -26,6 +27,12 @@ import lombok.RequiredArgsConstructor;
 public class ChatbotController {
 
     private final ChatbotService chatbotService;
+
+    @GetMapping("/sessions")
+    public ResponseEntity<ApiResponse<GetChatbotSetssionListResponse>> getChatbotSessions() {
+        GetChatbotSetssionListResponse response = chatbotService.getChatbotSessions();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     @PostMapping("/sessions/diagnosis")
     public ResponseEntity<ApiResponse<PostChatbotSessionResponse>> createChatbotSession(@RequestBody PostChatbotSessionRequest request) {
