@@ -1,6 +1,8 @@
 package com.annyang.infrastructure.client;
 
 import com.annyang.diagnosis.exception.DiagnosisException;
+import com.annyang.infrastructure.client.dto.PostChatbotGeneralQueryToAiResponse;
+import com.annyang.infrastructure.client.dto.PostChatbotGeneralQueryToAiRequest;
 import com.annyang.infrastructure.client.dto.PostChatbotQueryToAiRequest;
 import com.annyang.infrastructure.client.dto.PostChatbotQueryToAiResponse;
 import com.annyang.infrastructure.client.dto.PostChatbotSessionToAiRequest;
@@ -187,6 +189,40 @@ public class AiServerClient {
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode data = root.path("data");
             return objectMapper.treeToValue(data, PostChatbotQueryToAiResponse.class);
+        } catch (Exception e) {
+            System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new DiagnosisException();
+        }
+    }
+
+    public PostChatbotGeneralQueryToAiResponse submitGeneralChatbotQuery(String query, List<ChatbotConversation> conversations) {
+        String endpoint = "/chat/general";
+
+        try {
+            System.out.println("AI 서버 일반 챗봇 질문 전송 요청: " + aiServerUrl + endpoint);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            PostChatbotGeneralQueryToAiRequest request = new PostChatbotGeneralQueryToAiRequest(query);
+            for(int i=0; i<conversations.size(); i++) {
+                ChatbotConversation conversation = conversations.get(i);
+                if (i == 0) {
+                    request.setPreviousQuestion(conversation.getQuestion());
+                    request.setPreviousAnswer(conversation.getAnswer());
+                } else if (i == 1) {
+                    request.setTwoTurnQuestion(conversation.getQuestion());
+                    request.setTwoTurnAnswer(conversation.getAnswer());
+                }
+            }
+            HttpEntity<String> entity = new HttpEntity<>(objectMapper.writeValueAsString(request), headers);
+
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    aiServerUrl + endpoint, entity, String.class);
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.path("data");
+            return objectMapper.treeToValue(data, PostChatbotGeneralQueryToAiResponse.class);
         } catch (Exception e) {
             System.out.println("AI 서버 요청 중 오류 발생: " + e.getMessage());
             e.printStackTrace();
