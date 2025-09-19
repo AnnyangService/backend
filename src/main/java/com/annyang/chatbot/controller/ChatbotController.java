@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.annyang.chatbot.dto.GetChatbotSessionResponse;
 import com.annyang.chatbot.dto.PostChatbotConversationRequest;
 import com.annyang.chatbot.dto.PostChatbotConversationResponse;
+import com.annyang.chatbot.dto.PostChatbotGeneralSessionRequest;
+import com.annyang.chatbot.dto.PostChatbotGeneralSessionResponse;
 import com.annyang.chatbot.dto.PostChatbotSessionRequest;
 import com.annyang.chatbot.dto.PostChatbotSessionResponse;
 import com.annyang.chatbot.service.ChatbotService;
@@ -25,9 +27,15 @@ public class ChatbotController {
 
     private final ChatbotService chatbotService;
 
-    @PostMapping("/sessions")
+    @PostMapping("/sessions/diagnosis")
     public ResponseEntity<ApiResponse<PostChatbotSessionResponse>> createChatbotSession(@RequestBody PostChatbotSessionRequest request) {
         PostChatbotSessionResponse response = chatbotService.createChatbotSession(request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/sessions/general")
+    public ResponseEntity<ApiResponse<PostChatbotGeneralSessionResponse>> createGeneralChatbotSession(@RequestBody PostChatbotGeneralSessionRequest request) {
+        PostChatbotGeneralSessionResponse response = chatbotService.createGeneralChatbotSession(request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

@@ -2,6 +2,7 @@ package com.annyang.chatbot.controller;
 
 import com.annyang.Main;
 import com.annyang.chatbot.dto.PostChatbotConversationRequest;
+import com.annyang.chatbot.dto.PostChatbotGeneralSessionRequest;
 import com.annyang.chatbot.dto.PostChatbotSessionRequest;
 import com.annyang.chatbot.entity.ChatbotConversation;
 import com.annyang.chatbot.entity.ChatbotSession;
@@ -156,6 +157,15 @@ public class ChatbotControllerTest {
                 any(),
                 eq(String.class)))
                 .thenReturn(mockChatbotQueryResponseEntity);
+            
+        ResponseEntity<String> mockGeneralChatbotResponseEntity = 
+                new ResponseEntity<>(mockChatbotSessionResponse, HttpStatus.OK);
+
+        when(restTemplate.postForEntity(
+                eq(aiServerUrl + "/chat/general"),
+                any(),
+                eq(String.class)))
+                .thenReturn(mockGeneralChatbotResponseEntity);
     }
 
     @Test
@@ -169,7 +179,27 @@ public class ChatbotControllerTest {
                 .build();
 
         // When & Then
-        mockMvc.perform(post("/chatbot/sessions")
+        mockMvc.perform(post("/chatbot/sessions/diagnosis")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.session_id").exists())
+                .andExpect(jsonPath("$.data.first_conversation.question").exists())
+                .andExpect(jsonPath("$.data.first_conversation.answer").exists());
+    }
+
+    @Test
+    @DisplayName("챗봇 일반 세션 생성 API 성공")
+    @WithMockUser(username = USER_ID)
+    void createChatbotGeneralSession_Success() throws Exception {
+        // Given
+        PostChatbotGeneralSessionRequest request = PostChatbotGeneralSessionRequest.builder()
+                .query("이 질병에 대해 알려주세요.")
+                .build();
+
+        // When & Then
+        mockMvc.perform(post("/chatbot/sessions/general")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())

@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.annyang.chatbot.dto.GetChatbotSessionResponse;
+import com.annyang.chatbot.dto.PostChatbotGeneralSessionRequest;
+import com.annyang.chatbot.dto.PostChatbotGeneralSessionResponse;
 import com.annyang.chatbot.dto.PostChatbotConversationRequest;
 import com.annyang.chatbot.dto.PostChatbotConversationResponse;
 import com.annyang.chatbot.dto.PostChatbotSessionRequest;
@@ -21,6 +23,7 @@ import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
 import com.annyang.infrastructure.client.AiServerClient;
 import com.annyang.infrastructure.client.dto.PostChatbotQueryToAiResponse;
 import com.annyang.infrastructure.client.dto.PostChatbotSessionToAiResponse;
+import com.annyang.infrastructure.client.dto.PostChatbotGeneralQueryToAiResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,20 +45,40 @@ public class ChatbotService {
         return new PostChatbotSessionResponse(chatbotSession.getId(), chatbotConversation.getQuestion(), chatbotConversation.getAnswer());
     }
 
+    public PostChatbotGeneralSessionResponse createGeneralChatbotSession(PostChatbotGeneralSessionRequest request) {
+        PostChatbotGeneralQueryToAiResponse response = aiServerClient.submitGeneralChatbotQuery(request.getQuery(), List.of());
+        ChatbotSession chatbotSession = chatbotSessionRepository.save(ChatbotSession.createGeneralChatbotSession());
+        ChatbotConversation chatbotConversation = chatbotConversationRepository.save(new ChatbotConversation(chatbotSession, request.getQuery(), response.getAnswer()));
+        return new PostChatbotGeneralSessionResponse(chatbotSession.getId(), chatbotConversation.getQuestion(), chatbotConversation.getAnswer());
+    }
+
     public PostChatbotConversationResponse submitQuery(String sessionId, PostChatbotConversationRequest request) {
         ChatbotSession session = chatbotSessionRepository.findById(sessionId)
                 .orElseThrow(() -> new ChatbotSessionNotFoundException());
         List<ChatbotConversation> conversations = chatbotConversationRepository.findTop2ByChatbotSessionIdOrderByCreatedAtDesc(sessionId);
-        PostChatbotQueryToAiResponse response = aiServerClient.submitChatbotQuery(
-            request.getQuery(), 
-            session.getDiagnosisResult(),
-            conversations
-        );
-        ChatbotConversation conversation = new ChatbotConversation(session, request.getQuery(), response.getAnswer());
-        chatbotConversationRepository.save(conversation);
+        
+        ChatbotConversation conversation = createConversation(session, request.getQuery(), conversations);
+        conversation = chatbotConversationRepository.save(conversation);
         return PostChatbotConversationResponse.builder()
                 .answer(conversation.getAnswer())
                 .build();
+    }
+
+    private ChatbotConversation createConversation(ChatbotSession session, String query, List<ChatbotConversation> recentConversations) {
+        if(session.isDiagnosisBased()) {
+            PostChatbotQueryToAiResponse response = aiServerClient.submitChatbotQuery(
+                query, 
+                session.getDiagnosisResult(),
+                recentConversations
+            );
+            return new ChatbotConversation(session, query, response.getAnswer());
+        } else {
+            PostChatbotGeneralQueryToAiResponse response = aiServerClient.submitGeneralChatbotQuery(
+                query, 
+                recentConversations
+            );
+            return new ChatbotConversation(session, query, response.getAnswer());
+        }
     }
 
     public GetChatbotSessionResponse getChatbotSession(String sessionId) {
