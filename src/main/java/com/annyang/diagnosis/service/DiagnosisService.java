@@ -4,6 +4,7 @@ import com.annyang.infrastructure.client.AiServerClient;
 import com.annyang.infrastructure.client.dto.PostFirstStepDiagnosisToAiResponse;
 import com.annyang.infrastructure.client.dto.PostThirdStepDiagnosisToAiResponse;
 import com.annyang.diagnosis.dto.GetDiagnosisRuleResponse;
+import com.annyang.diagnosis.dto.GetMyDiagnosesResponse;
 import com.annyang.diagnosis.dto.GetSecondStepDiagnosisResponse;
 import com.annyang.diagnosis.dto.PostFirstStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.PostFirstStepDiagnosisResponse;
@@ -17,11 +18,14 @@ import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
 import com.annyang.diagnosis.repository.DiagnosisRuleRepository;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
+import com.annyang.global.util.SecurityUtil;
+import com.annyang.member.entity.Member;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,13 +40,16 @@ public class DiagnosisService {
     private final SecondStepDiagnosisRepository secondStepDiagnosisRepository;
     private final ThirdStepDiagnosisRepository thirdStepDiagnosisRepository;
     private final DiagnosisRuleRepository diagnosisRuleRepository;
+    private final SecurityUtil securityUtil;
 
     @Transactional
     public PostFirstStepDiagnosisResponse diagnoseFirstStep(PostFirstStepDiagnosisRequest request) {
+        Member currentMember = securityUtil.getCurrentMember();
         PostFirstStepDiagnosisToAiResponse response = aiServerClient.requestFirstDiagnosis(request.getImageUrl());
         String passwordForSecondStep = UUID.randomUUID().toString();
 
         FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
+                .member(currentMember)
                 .imageUrl(request.getImageUrl())
                 .isNormal(response.isNormal())
                 .confidence(response.getConfidence())
@@ -76,9 +83,15 @@ public class DiagnosisService {
 
     @Transactional(readOnly = true)
     public GetSecondStepDiagnosisResponse getSecondDiagnosis(String id) {
+        Member currentMember = securityUtil.getCurrentMember();
         SecondStepDiagnosis secondDiagnosis = secondStepDiagnosisRepository.findById(id)
                 .orElse(null);
         if (secondDiagnosis == null) return null;
+        
+        // 현재 사용자가 해당 진단의 소유자인지 확인
+        if (!secondDiagnosis.getFirstStepDiagnosis().getMember().getId().equals(currentMember.getId())) {
+            throw new SecurityException("Access denied: You don't have permission to view this diagnosis");
+        }
 
         return GetSecondStepDiagnosisResponse.builder()
                 .id(id)
@@ -103,10 +116,20 @@ public class DiagnosisService {
 
     @Transactional
     public PostThirdStepDiagnosisResponse createThirdStepDiagnosis(PostThirdStepDiagnosisRequest request) {
+        Member currentMember = securityUtil.getCurrentMember();
         FirstStepDiagnosis firstStepDiagnosis = firstStepDiagnosisRepository.findById(request.getDiagnosisId())
                 .orElseThrow(() -> new EntityNotFoundException("FirstStepDiagnosis not found with id: " + request.getDiagnosisId()));
+        
+        // 현재 사용자가 해당 진단의 소유자인지 확인
+        if (!firstStepDiagnosis.getMember().getId().equals(currentMember.getId())) {
+            throw new SecurityException("Access denied: You don't have permission to modify this diagnosis");
+        }
+        
         SecondStepDiagnosis secondStepDiagnosis = secondStepDiagnosisRepository.findById(firstStepDiagnosis.getId())
-                .orElseThrow(() -> new EntityNotFoundException("SecondStepDiagnosis not found for FirstStepDiagnosis with id: " + request.getDiagnosisId()));
+                .orElse(null);
+        if (secondStepDiagnosis == null) {
+            throw new EntityNotFoundException("SecondStepDiagnosis not found for FirstStepDiagnosis with id: " + request.getDiagnosisId());
+        }
 
         ThirdStepDiagnosis thirdStepDiagnosis = thirdStepDiagnosisRepository.findById(firstStepDiagnosis.getId())
             .orElseGet(() -> {
@@ -116,5 +139,51 @@ public class DiagnosisService {
                 return _thirdStepDiagnosis;
             });
         return new PostThirdStepDiagnosisResponse(thirdStepDiagnosis);
+    }
+
+    // TODO N+1 성능 개선
+    @Transactional(readOnly = true)
+    public GetMyDiagnosesResponse getMyDiagnoses() {
+        Member currentMember = securityUtil.getCurrentMember();
+        List<FirstStepDiagnosis> firstStepDiagnoses = firstStepDiagnosisRepository.findAllByMemberIdOrderByCreatedAtDesc(currentMember.getId());
+        
+        List<GetMyDiagnosesResponse.DiagnosisDto> diagnosisDtos = firstStepDiagnoses.stream()
+                .map(firstStep -> {
+                    GetMyDiagnosesResponse.DiagnosisDto.DiagnosisDtoBuilder builder = GetMyDiagnosesResponse.DiagnosisDto.builder()
+                            .id(firstStep.getId())
+                            .imageUrl(firstStep.getImageUrl())
+                            .isNormal(firstStep.isNormal())
+                            .confidence(firstStep.getConfidence())
+                            .createdAt(firstStep.getCreatedAt());
+                    
+                    // Second Step 정보 추가
+                    SecondStepDiagnosis secondStep = secondStepDiagnosisRepository.findById(firstStep.getId()).orElse(null);
+                    if (secondStep != null) {
+                        builder.secondStep(GetMyDiagnosesResponse.SecondStepDto.builder()
+                                .category(secondStep.getCategory())
+                                .confidence(secondStep.getConfidence())
+                                .createdAt(secondStep.getCreatedAt())
+                                .build());
+                        
+                        // Third Step 정보 추가
+                        ThirdStepDiagnosis thirdStep = thirdStepDiagnosisRepository.findById(firstStep.getId()).orElse(null);
+                        if (thirdStep != null) {
+                            builder.thirdStep(GetMyDiagnosesResponse.ThirdStepDto.builder()
+                                    .category(thirdStep.getCategory())
+                                    .summary(thirdStep.getSummary())
+                                    .details(thirdStep.getDetails())
+                                    .attributeAnalysis(thirdStep.getAttributeAnalysis())
+                                    .createdAt(thirdStep.getCreatedAt())
+                                    .build());
+                        }
+                    }
+                    
+                    return builder.build();
+                })
+                .collect(Collectors.toList());
+        
+        return GetMyDiagnosesResponse.builder()
+                .diagnoses(diagnosisDtos)
+                .build();
     }
 }
