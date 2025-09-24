@@ -104,6 +104,7 @@ public class ChatbotControllerTest {
                 .imageUrl("https://s3.bucket/path/to/image.jpg")
                 .isNormal(false)
                 .confidence(0.95)
+                .member(testMember)
                 .passwordForSecondStep("password123")
                 .build();
         firstStepDiagnosis = firstStepDiagnosisRepository.save(firstStepDiagnosis);

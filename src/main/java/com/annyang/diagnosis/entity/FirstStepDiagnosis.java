@@ -3,6 +3,7 @@ package com.annyang.diagnosis.entity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import com.annyang.global.entity.BaseEntity;
+import com.annyang.member.entity.Member;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -22,6 +23,10 @@ public class FirstStepDiagnosis extends BaseEntity {
     @PrimaryKeyJoinColumn
     private SecondStepDiagnosis secondStepDiagnosis;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id", nullable = false, foreignKey = @ForeignKey(name = "fk_first_step_diagnosis_member"))
+    private Member member;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
 
@@ -35,8 +40,12 @@ public class FirstStepDiagnosis extends BaseEntity {
     private String passwordForSecondStep;
 
     @Builder
-    public FirstStepDiagnosis(String imageUrl, boolean isNormal, double confidence, String passwordForSecondStep) {
+    public FirstStepDiagnosis(Member member, String imageUrl, boolean isNormal, double confidence, String passwordForSecondStep) {
         super();
+        if (member == null) {
+            throw new IllegalArgumentException("Member cannot be null");
+        }
+        this.member = member;
         this.imageUrl = imageUrl;
         this.isNormal = isNormal;
         this.confidence = confidence;

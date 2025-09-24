@@ -6,9 +6,12 @@ import com.annyang.diagnosis.dto.PostSecondStepDiagnosisRequest;
 import com.annyang.diagnosis.dto.PostThirdStepDiagnosisRequest;
 import com.annyang.diagnosis.entity.FirstStepDiagnosis;
 import com.annyang.diagnosis.entity.SecondStepDiagnosis;
+import com.annyang.diagnosis.entity.ThirdStepDiagnosis;
 import com.annyang.diagnosis.repository.FirstStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.SecondStepDiagnosisRepository;
 import com.annyang.diagnosis.repository.ThirdStepDiagnosisRepository;
+import com.annyang.member.entity.Member;
+import com.annyang.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,7 +28,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,6 +69,8 @@ public class DiagnosisControllerTest {
 
     private static String password;
 
+    private Member testMember;
+
     @Autowired
     private FirstStepDiagnosisRepository firstStepDiagnosisRepository;
 
@@ -72,12 +79,27 @@ public class DiagnosisControllerTest {
 
     @Autowired
     private ThirdStepDiagnosisRepository thirdStepDiagnosisRepository;
+    
+    @Autowired
+    private MemberRepository memberRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Autowired
     private EntityManager entityManager;
 
     @BeforeEach
     void setUp() {
+        // 테스트용 회원 생성
+        testMember = new Member(
+            "test@example.com",
+            passwordEncoder.encode("password123"),
+            "Test User"
+        );
+        ReflectionTestUtils.setField(testMember, "id", USER_ID);
+        memberRepository.save(testMember);
+
         // 진단 요청 객체 생성
         diagnosisRequest = new PostFirstStepDiagnosisRequest();
         diagnosisRequest.setImageUrl("https://s3.bucket/path/to/image.jpg");
@@ -319,7 +341,9 @@ public class DiagnosisControllerTest {
                 .isNormal(true)
                 .confidence(0.9999570846557617)
                 .passwordForSecondStep("password")
+                .member(testMember)
                 .build();
+        firstStepDiagnosis = firstStepDiagnosisRepository.save(firstStepDiagnosis);
         SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(
             firstStepDiagnosis, "password", "category", 0.5);
         secondStepDiagnosisRepository.save(secondStepDiagnosis);
@@ -341,5 +365,89 @@ public class DiagnosisControllerTest {
                 .andExpect(jsonPath("$.data.summary").exists())
                 .andExpect(jsonPath("$.data.details").exists())
                 .andExpect(jsonPath("$.data.attributeAnalysis").exists());
+    }
+
+    @Test
+    @DisplayName("내 진단 목록 조회 성공 - 모든 단계 완료된 진단")
+    @WithMockUser(username = USER_ID)
+    void getMyDiagnoses_Success_WithAllSteps() throws Exception {
+        // Given
+        FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
+                .member(testMember)
+                .imageUrl("https://s3.bucket/path/to/image.jpg")
+                .isNormal(false)
+                .confidence(0.85)
+                .passwordForSecondStep("password123")
+                .build();
+        firstStepDiagnosis = firstStepDiagnosisRepository.save(firstStepDiagnosis);
+        SecondStepDiagnosis secondStepDiagnosis = new SecondStepDiagnosis(
+                firstStepDiagnosis, "password123", "비궤양성 각막염", 0.88);
+        secondStepDiagnosis = secondStepDiagnosisRepository.save(secondStepDiagnosis);
+        ThirdStepDiagnosis thirdStepDiagnosis = new ThirdStepDiagnosis(
+                firstStepDiagnosis,
+                "비궤양성 각막염",
+                "급성 비궤양성 각막염으로 진단됩니다.",
+                "점액성 분비물과 함께 급성으로 진행되는 각막 염증이 관찰됩니다.",
+                java.util.Map.of()
+        );
+        thirdStepDiagnosis = thirdStepDiagnosisRepository.save(thirdStepDiagnosis);
+
+        // When & Then
+        mockMvc.perform(get("/diagnosis/my")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.diagnoses").isArray())
+                .andExpect(jsonPath("$.data.diagnoses[0].id").value(firstStepDiagnosis.getId()))
+                .andExpect(jsonPath("$.data.diagnoses[0].image_url").value("https://s3.bucket/path/to/image.jpg"))
+                .andExpect(jsonPath("$.data.diagnoses[0].is_normal").value(false))
+                .andExpect(jsonPath("$.data.diagnoses[0].confidence").value(0.85))
+                .andExpect(jsonPath("$.data.diagnoses[0].second_step.category").value("비궤양성 각막염"))
+                .andExpect(jsonPath("$.data.diagnoses[0].second_step.confidence").value(0.88))
+                .andExpect(jsonPath("$.data.diagnoses[0].third_step.category").value("비궤양성 각막염"))
+                .andExpect(jsonPath("$.data.diagnoses[0].third_step.summary").value("급성 비궤양성 각막염으로 진단됩니다."))
+                .andExpect(jsonPath("$.data.diagnoses[0].third_step.details").value("점액성 분비물과 함께 급성으로 진행되는 각막 염증이 관찰됩니다."));
+    }
+
+    @Test
+    @DisplayName("내 진단 목록 조회 성공 - First Step만 완료된 진단")
+    @WithMockUser(username = USER_ID)
+    void getMyDiagnoses_Success_WithFirstStepOnly() throws Exception {
+        // Given
+        // First Step 진단만 생성
+        FirstStepDiagnosis firstStepDiagnosis = FirstStepDiagnosis.builder()
+                .member(testMember)
+                .imageUrl("https://s3.bucket/path/to/image2.jpg")
+                .isNormal(true)
+                .confidence(0.95)
+                .passwordForSecondStep("password456")
+                .build();
+        firstStepDiagnosisRepository.save(firstStepDiagnosis);
+
+        // When & Then
+        mockMvc.perform(get("/diagnosis/my")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.diagnoses").isArray())
+                .andExpect(jsonPath("$.data.diagnoses[0].id").value(firstStepDiagnosis.getId()))
+                .andExpect(jsonPath("$.data.diagnoses[0].image_url").value("https://s3.bucket/path/to/image2.jpg"))
+                .andExpect(jsonPath("$.data.diagnoses[0].is_normal").value(true))
+                .andExpect(jsonPath("$.data.diagnoses[0].confidence").value(0.95))
+                .andExpect(jsonPath("$.data.diagnoses[0].second_step").doesNotExist())
+                .andExpect(jsonPath("$.data.diagnoses[0].third_step").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("내 진단 목록 조회 성공 - 빈 목록")
+    @WithMockUser(username = USER_ID)
+    void getMyDiagnoses_Success_EmptyList() throws Exception {
+        // When & Then
+        mockMvc.perform(get("/diagnosis/my")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.diagnoses").isArray())
+                .andExpect(jsonPath("$.data.diagnoses").isEmpty());
     }
 }
